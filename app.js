@@ -234,7 +234,7 @@
   function renderChart({ animate = true } = {}) {
     const el = $('#chart');
     if (!el.offsetParent) return; // hidden in current view
-    const W = el.clientWidth, H = el.clientHeight, pl = 52, pb = 24, pt = 10;
+    const W = el.clientWidth, H = el.clientHeight, pl = W < 420 ? 38 : 52, pb = 24, pt = 10;
     const currCode = repCurr();
     const currSym = (F.CURRENCIES && F.CURRENCIES[currCode] && F.CURRENCIES[currCode].symbol) || '$';
     const fxDate = (state.fx && state.fx.date) || '';
@@ -263,6 +263,7 @@
     for (let v = loR; v <= max; v += step) s += `<line x1="${pl}" x2="${W}" y1="${y(v)}" y2="${y(v)}" style="stroke:var(--line)" stroke-dasharray="${v ? '2 4' : ''}"/><text x="0" y="${y(v) + 4}">${fmtAxis(v)}</text>`;
     s += `<rect class="xh-band" x="0" y="${pt}" width="${cw}" height="${H - pt - pb}" style="display:none"/>`;
     const heights = {};
+    const showEvery = (W < 420 && n > 6) ? 2 : 1;
     S.forEach((m, i) => {
       const cx = pl + cw * i + cw / 2, cur = i === n - 1;
       heights[m.month] = {};
@@ -280,7 +281,9 @@
         }
         s += '</g>';
       });
-      s += `<text x="${cx}" y="${H - 6}" text-anchor="middle" ${cur ? 'style="fill:var(--text);font-weight:600"' : ''}>${monthName(m.month)}</text>`;
+      const isLabelVisible = (n <= 6) || (i % showEvery === 0) || cur;
+      const labelText = isLabelVisible ? monthName(m.month) : '';
+      s += `<text x="${cx}" y="${H - 6}" text-anchor="middle" ${cur ? 'style="fill:var(--text);font-weight:600"' : ''}>${labelText}</text>`;
     });
     s += `<g class="netl" style="--n:${n * 2}"><polyline points="${S.map((m, i) => `${pl + cw * i + cw / 2},${y(m.net)}`).join(' ')}" fill="none" style="stroke:var(--text)" stroke-width="1.5" stroke-dasharray="3 3"/>`;
     S.forEach((m, i) => s += `<rect class="nm" data-m="${m.month}" x="${pl + cw * i + cw / 2 - 3}" y="${y(m.net) - 3}" width="6" height="6" style="fill:var(--bg);stroke:${m.net < 0 ? 'var(--danger)' : 'var(--text)'}"/>`);
@@ -318,9 +321,11 @@
     const rate = m.savingsRate === null ? '—' : m.savingsRate.toFixed(1) + '%';
     const tip = $('#tip');
     tip.innerHTML = `<b>${monthName(m.month)} ${m.month.slice(0, 4)}</b><div><span>Income</span><span>${fmt(m.income)}</span></div><div><span>Expenses</span><span>${fmt(m.expense)}</span></div><div><span>Net</span><span style="color:${m.net < 0 ? 'var(--danger)' : 'var(--pos)'}">${fmt(m.net)}</span></div><div><span>Savings rate</span><span>${rate}</span></div>`;
-    const tw = tip.offsetWidth || 170, th = tip.offsetHeight || 96;
-    const left = cx + 14 + tw > W ? cx - 14 - tw : cx + 14;
-    tip.style.left = Math.max(4, Math.min(W - tw - 4, left)) + 'px';
+    const tw = Math.min(tip.offsetWidth || 170, W - 16), th = tip.offsetHeight || 96;
+    let left = cx + 14;
+    if (left + tw > W - 8) left = cx - 14 - tw;
+    if (left < 6) left = 6;
+    tip.style.left = left + 'px';
     tip.style.top = Math.max(4, Math.min(H - th - 4, (py ?? y(m.net)) - th / 2)) + 'px';
     tip.classList.add('show');
     $('#chartLive').textContent = `${monthName(m.month)} ${m.month.slice(0, 4)}: income ${fmt(m.income)}, expenses ${fmt(m.expense)}, net ${fmt(m.net)}`;
