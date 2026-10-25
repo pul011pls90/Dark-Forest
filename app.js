@@ -505,7 +505,7 @@
     }
 
     // Overview goals list — compact single-column rows inside the "Savings goals" card
-    $('#goalList').innerHTML = state.goals.length ? state.goals.map(g => {
+    $('#goalList').innerHTML = state.goals.length ? state.goals.map((g, idx) => {
       const p = F.goalProgress(g, state.today), on = p.done ? 12 : Math.floor(p.pct / 100 * 12);
       const gSaved = convFromUSD(g.saved);
       const gTarget = convFromUSD(g.target);
@@ -516,7 +516,7 @@
         : p.overdue ? `<span class="neg">Overdue · was due ${monthLong(g.deadline)}</span>`
         : gPerMonth !== null ? `<b>${fmt(gPerMonth, 0)}/mo</b> to finish by ${monthLong(g.deadline)}`
         : `<b>${fmt(gSuggested, 0)}/mo</b> suggested (12-mo pace)`;
-      return `<article class="goal" aria-label="${esc(g.name)}">
+      return `<article class="goal${idx === 0 ? ' featured' : ''}" aria-label="${esc(g.name)}">
         <div class="goal-head">
           <span class="pix" style="font-size:10px;color:var(--muted)">${esc(g.tag)}</span>
           <span class="gname">${esc(g.name)}</span>
@@ -759,12 +759,24 @@
   /* ---------- navigation ---------- */
   const VIEWS = ['overview', 'transactions', 'budgets', 'goals', 'reports'];
   function setView(v) {
+    const prev = state.view;
     state.view = VIEWS.includes(v) ? v : 'overview';
     document.body.dataset.view = state.view;
     document.querySelectorAll('#tabs button').forEach(b => { const on = b.dataset.view === state.view; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
     document.querySelectorAll('[data-views]').forEach(el => { el.hidden = !el.dataset.views.split(' ').includes(state.view); });
     $('#row2').classList.toggle('solo', state.view !== 'overview');
     renderBudget(); renderGoals(); renderInsights(); renderChart(); renderQuickAdd(); renderRecurring(); renderTable();
+    if (prev && prev !== state.view) triggerEffectD();
+  }
+
+  function triggerEffectD() {
+    if (!motion() || (state.settings && state.settings.ambientMotion === false)) return;
+    const target = document.querySelector(`[data-views~="${state.view}"]:not([hidden])`);
+    if (!target) return;
+    target.classList.remove('effect-d');
+    void target.offsetWidth;
+    target.classList.add('effect-d');
+    setTimeout(() => target.classList.remove('effect-d'), 280);
   }
   window.addEventListener('hashchange', () => setView(location.hash.slice(2)));
 
@@ -1279,7 +1291,9 @@
 
   async function refreshExchangeRates({ silent = false } = {}) {
     const btn = $('#refreshFxBtn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Refreshing…'; }
+    const dot = $('#footerSysDot');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="px-loader active"><i></i><i></i><i></i><i></i><i></i></span> Fetching rates…'; }
+    if (dot) dot.classList.add('syncing');
     try {
       const res = await F.fetchExchangeRates(null, storage);
       if (res && res.fx) state.fx = res.fx;
@@ -1290,6 +1304,7 @@
       }
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh Live Rates'; }
+      if (dot) dot.classList.remove('syncing');
     }
   }
 
@@ -1447,10 +1462,25 @@
       sDate.innerHTML = F.DATE_FORMATS.map(code => `<option value="${esc(code)}"${code === cur ? ' selected' : ''}>${esc(DATE_LABELS[code] || code)}</option>`).join('');
     }
     if ($('#ecat-name')) $('#ecat-name').textContent = '';
+    const sAmbient = $('#sAmbientMotion');
+    if (sAmbient) {
+      sAmbient.checked = state.settings.ambientMotion !== false;
+      sAmbient.onchange = e => {
+        state.settings = { ...state.settings, ambientMotion: e.target.checked };
+        persist();
+        syncAmbientMotionState();
+        toast(e.target.checked ? 'Ambient telemetry motion enabled' : 'Ambient decorative motion paused');
+      };
+    }
     renderFxStatusBox();
     renderAcctCurrenciesList();
     renderCustomCatsList();
     setDlg.showModal();
+  }
+
+  function syncAmbientMotionState() {
+    const active = (state.settings && state.settings.ambientMotion !== false) && motion();
+    document.body.classList.toggle('no-ambient-motion', !active);
   }
 
   function setReportingCurrency(newCode) {
@@ -2005,6 +2035,8 @@
     document.addEventListener('visibilitychange', () => { document.body.classList.toggle('tab-inactive', document.hidden); });
     bindChart();
     initPWA();
+    syncAmbientMotionState();
+    reducedMotion.addEventListener('change', syncAmbientMotionState);
     renderAll();
     setView(location.hash.slice(2));
     if (F.isFxStale(state.fx) && typeof navigator !== 'undefined' && navigator.onLine !== false) {

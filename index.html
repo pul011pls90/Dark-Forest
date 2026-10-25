@@ -511,6 +511,67 @@ dialog[open]{animation:dlg-in 180ms var(--ease-out)}
 /* Power saving on inactive tab */
 body.tab-inactive *{animation-play-state:paused!important}
 
+/* Effect D: Restrained CRT signal interference on section transition */
+.effect-d{position:relative;animation:effect-d-jitter 240ms cubic-bezier(.2,.8,.4,1)}
+.effect-d::after{content:"";position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;background:linear-gradient(180deg,transparent 0%,rgba(0,223,129,.04) 45%,rgba(0,223,129,.16) 50%,rgba(0,223,129,.04) 55%,transparent 100%);border-top:1px solid rgba(0,223,129,.35);border-bottom:1px solid rgba(0,223,129,.35);opacity:0;animation:effect-d-sweep 240ms cubic-bezier(.2,.8,.4,1) forwards;z-index:10}
+@keyframes effect-d-sweep{0%{transform:translateY(-100%);opacity:.95}50%{opacity:.7}100%{transform:translateY(100%);opacity:0}}
+@keyframes effect-d-jitter{0%{filter:brightness(1)}25%{transform:translateX(-1px);filter:brightness(1.1) contrast(1.04)}50%{transform:translateX(1px);filter:brightness(1.05)}75%{transform:translateX(0);filter:brightness(1.02)}100%{transform:translateX(0);filter:brightness(1)}}
+
+/* Secondary Visualizations: Selective Glow & Breathing */
+.goal.featured .px i.on{animation:goal-meter-glow 5.2s ease-in-out infinite}
+.goal.featured .px i.on:nth-child(2){animation-delay:.2s}
+.goal.featured .px i.on:nth-child(3){animation-delay:.35s}
+.goal.featured .px i.on:nth-child(4){animation-delay:.5s}
+.goal.featured .px i.on:nth-child(5){animation-delay:.65s}
+.goal.featured .px i.on:nth-child(6){animation-delay:.8s}
+.goal.featured .px i.on:nth-child(7){animation-delay:.95s}
+.goal.featured .px i.on:nth-child(8){animation-delay:1.1s}
+@keyframes goal-meter-glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.2)}}
+
+.bcard.st-warning .bcard-meter-fill,.bcard.st-danger .bcard-meter-fill{animation:bcard-meter-breathe 4.5s ease-in-out infinite}
+@keyframes bcard-meter-breathe{0%,100%{opacity:.88}50%{opacity:1;filter:brightness(1.15)}}
+
+/* Genuine System Status Heartbeat */
+.sys-dot{animation:sys-heartbeat 4.5s ease-in-out infinite}
+@keyframes sys-heartbeat{0%,100%{opacity:.85;transform:scale(1);box-shadow:0 0 0 0 transparent}50%{opacity:1;transform:scale(1.15);box-shadow:0 0 4px var(--pos-ghost)}}
+.sys-dot.warn{animation:sys-warn-pulse 2.2s ease-in-out infinite}
+@keyframes sys-warn-pulse{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.2);box-shadow:0 0 4px var(--warn-ghost)}}
+.sys-dot.syncing{animation:sys-syncing 500ms ease-in-out infinite;background:var(--accent)}
+@keyframes sys-syncing{0%,100%{opacity:.3;transform:scale(.9)}50%{opacity:1;transform:scale(1.3);box-shadow:0 0 6px var(--accent)}}
+
+/* Segmented Pixel Loading Indicator */
+.px-loader{display:inline-flex;gap:2px;align-items:center;height:10px;vertical-align:middle;margin-right:6px}
+.px-loader i{width:4px;height:8px;background:var(--surface-2);border-radius:1px}
+.px-loader.active i{animation:px-load-step 800ms steps(1,end) infinite}
+.px-loader.active i:nth-child(1){animation-delay:0ms}
+.px-loader.active i:nth-child(2){animation-delay:160ms}
+.px-loader.active i:nth-child(3){animation-delay:320ms}
+.px-loader.active i:nth-child(4){animation-delay:480ms}
+.px-loader.active i:nth-child(5){animation-delay:640ms}
+@keyframes px-load-step{0%,100%{background:var(--surface-2)}20%,60%{background:var(--accent)}}
+
+/* Interactive Details: Restrained Hover & Tap Responses */
+.cbar rect.px-seg:hover{filter:brightness(1.3) drop-shadow(0 0 2px var(--accent))!important;transition:filter var(--dur-fast) var(--ease-out)}
+.nm:hover{transform:scale(1.35);filter:brightness(1.35);transition:transform var(--dur-fast) var(--ease-out),filter var(--dur-fast)}
+
+/* User-controlled Pause of Ambient Decorative Motion */
+body.no-ambient-motion .cbar rect.px-seg,
+body.no-ambient-motion .cbar.cur rect.px-seg,
+body.no-ambient-motion .net-track,
+body.no-ambient-motion .net-pulse,
+body.no-ambient-motion .nm.cur,
+body.no-ambient-motion .chartwrap::before,
+body.no-ambient-motion .pxgrid i.a,
+body.no-ambient-motion #ring rect.lead,
+body.no-ambient-motion .px-bar i.on,
+body.no-ambient-motion .goal.featured .px i.on,
+body.no-ambient-motion .bcard.st-warning .bcard-meter-fill,
+body.no-ambient-motion .bcard.st-danger .bcard-meter-fill,
+body.no-ambient-motion .sys-dot:not(.syncing),
+body.no-ambient-motion .effect-d{animation:none!important}
+body.no-ambient-motion .chartwrap::before,
+body.no-ambient-motion .net-pulse{display:none!important}
+
 .cbar:hover rect.px-seg{filter:brightness(1.2)}
 .cat:hover .px-bar i.on,.cat:focus-visible .px-bar i.on{filter:brightness(1.18)}
 
@@ -629,6 +690,13 @@ body.tab-inactive *{animation-play-state:paused!important}
   .seg button{padding:3px 7px;font-size:10.5px}
   .rec-item,.up-item{padding:8px 10px;font-size:11.5px}
   .restore-grid{grid-template-columns:1fr}
+}
+
+@media (max-width:360px){
+  .cat{gap:6px;padding:5px 2px}
+  .cat .px-bar.sm{display:none}
+  .cat .pct{width:28px}
+  .cat .val{width:auto}
 }
 
 @media (max-width:340px){
@@ -1236,6 +1304,15 @@ body.tab-inactive *{animation-play-state:paused!important}
           All records use stable UUID-style identifiers, ISO timestamps, idempotent recurring occurrence keys (<code>recurringId + occurrenceDate</code>), and versioned schema envelopes—ready for optional end-to-end or row-level-secured cloud sync without data loss. No cloud backend is connected in this static deployment; use <strong>Backup JSON</strong> / <strong>Restore Backup</strong> to move data across devices today, or see <code>SYNC_ARCHITECTURE.md</code> for the full backend specification.
         </div>
       </div>
+    </div>
+
+    <div class="settings-sec">
+      <h4>Interface Motion &amp; Ambient Telemetry</h4>
+      <p class="sub">Controls subtle pixel-segment fluctuations, net trajectory flow, and retro terminal CRT interference.</p>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12.5px;padding:6px 0">
+        <input type="checkbox" id="sAmbientMotion" checked style="accent-color:var(--accent);width:16px;height:16px;cursor:pointer">
+        <span>Enable living charts &amp; CRT section transitions</span>
+      </label>
     </div>
   </div>
   <div class="df">

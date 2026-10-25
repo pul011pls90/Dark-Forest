@@ -1,7 +1,7 @@
 /* Dark Forest Finance — App-Shell Service Worker.
    Caches only static application shell assets. Financial records live in localStorage
    and are never cached in Service Worker CacheStorage. */
-const CACHE_VERSION = 'dark-forest-shell-v10';
+const CACHE_VERSION = 'dark-forest-shell-v11';
 const APP_SHELL = [
   './',
   './index.html',
