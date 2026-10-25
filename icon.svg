@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <rect width="128" height="128" rx="24" fill="#00110F"/>
+  <rect x="6" y="6" width="116" height="116" rx="18" fill="#041F1A" stroke="#00654F" stroke-width="4"/>
+  <!-- 3x3 Dark Forest pixel emblem -->
+  <rect x="28" y="28" width="20" height="20" fill="#00DF81"/>
+  <rect x="54" y="28" width="20" height="20" fill="#00DF81"/>
+  <rect x="28" y="54" width="20" height="20" fill="#00654F"/>
+  <rect x="54" y="54" width="20" height="20" fill="#00DF81"/>
+  <rect x="80" y="54" width="20" height="20" fill="#00DF81"/>
+  <rect x="54" y="80" width="20" height="20" fill="#00654F"/>
+  <rect x="80" y="80" width="20" height="20" fill="#00DF81"/>
+</svg>

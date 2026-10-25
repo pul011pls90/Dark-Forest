@@ -1,0 +1,20 @@
+{
+  "name": "Dark Forest Finance",
+  "short_name": "Dark Forest",
+  "description": "Local-first personal finance application for transactions, recurring schedules, budgets, and savings goals.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#00110F",
+  "theme_color": "#00110F",
+  "categories": ["finance", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

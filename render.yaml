@@ -1,0 +1,25 @@
+# Render Blueprint — Dark Forest Finance (Static Site PWA)
+# Deploy via: https://dashboard.render.com/select-repo?type=static or `render blueprint launch`
+services:
+  - type: web
+    name: dark-forest-finance
+    runtime: static
+    buildCommand: ""
+    staticPublishPath: .
+    pullRequestPreviewsEnabled: true
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /sw.js
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /manifest.webmanifest
+        name: Content-Type
+        value: application/manifest+json

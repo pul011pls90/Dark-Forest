@@ -1,0 +1,1181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#00110F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Dark Forest Finance</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Geist Pixel is decorative only: subset to the glyphs it renders (level label, goal badges) -->
+<link href="https://fonts.googleapis.com/css2?family=Geist+Pixel&text=LEVSAR0123456789%20HPXGMU&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Core palette */
+  --bg-primary:#00110F;                   /* near-black with a subtle green undertone */
+  --bg:var(--bg-primary);                 /* page background */
+  --bg-subtle:#001814;                    /* slightly elevated dark container */
+  --surface:#041F1A;                      /* cards, panels, dialogs (black/dark dominates) */
+  --surface-2:#072B24;                    /* hover rows, empty pixels, inactive meters */
+  --surface-emerald:#00654F;              /* deep emerald for structural elements, headers, selected states */
+  --surface-emerald-ghost:rgba(0,101,79,.35);
+  --surface-emerald-subtle:rgba(0,101,79,.16);
+  --brand:var(--surface-emerald);         /* alias used by segmented buttons, pixel grid & corners */
+  --brand-ghost:var(--surface-emerald-ghost);
+
+  --accent:#00DF81;                       /* vivid green: primary CTA, active states, progress highlights */
+  --accent-hover:#1EFF96;
+  --accent-ghost:rgba(0,223,129,.14);
+  --accent-glow:rgba(0,223,129,.25);
+  --on-accent:#00110F;
+
+  --text-primary:#F0F7F4;                 /* primary text */
+  --text-muted:#9AB2A9;                   /* secondary text */
+  --text:var(--text-primary);
+  --muted:var(--text-muted);
+  --muted-2:#6A887E;
+
+  --line:#0B382D;                         /* subtle dark-green borders */
+  --line-strong:#134B3D;                  /* noticeable borders */
+  --border-strong:var(--line-strong);
+  --line-emerald:#00654F;                 /* structural deep emerald border */
+  --line-accent:rgba(0,223,129,.35);
+
+  --pos:#00DF81;                          /* positive financial indicators */
+  --pos-ghost:rgba(0,223,129,.14);
+  --danger:#FF6666;                       /* over budget, negative indicators */
+  --danger-ghost:rgba(255,102,102,.14);
+  --on-danger:#3A0A0D;
+  --warn:#E8C25A;                         /* approaching budget limit (80%-100%) */
+  --warn-ghost:rgba(232,194,90,.12);
+  --warn-line:#7A6220;
+  --scrim:rgba(0,17,15,.85);
+
+  /* Categorical spending colors */
+  --cat-1:#00DF81; --cat-2:#00B871; --cat-3:#2ED19F; --cat-4:#48E5B1; --cat-5:#38BDF8; --cat-6:#E8C25A;
+  --cat-7:#818CF8; --cat-8:#A78BFA; --cat-9:#F472B6; --cat-10:#34D399; --cat-11:#A3E635;
+
+  /* Typography tokens */
+  --font-sans:"IBM Plex Mono","Manrope",ui-monospace,"SF Mono",Menlo,monospace;
+  --font-mono:"IBM Plex Mono","Manrope",ui-monospace,"SF Mono",Menlo,monospace;
+  --font-pixel:"Geist Pixel",var(--font-sans);
+
+  --fw-regular:400;
+  --fw-medium:500;
+  --fw-semibold:600;
+  --fw-bold:700;
+  --fw-extrabold:800;
+
+  /* Spacing & Radii tokens */
+  --space-2xs:2px;
+  --space-xs:4px;
+  --space-sm:8px;
+  --space-md:14px;
+  --space-lg:20px;
+  --space-xl:28px;
+  --gap:16px;
+
+  --r-sm:6px;
+  --r-md:10px;
+  --r-lg:14px;
+  --r-pill:9999px;
+  --r:var(--r-md);
+
+  /* Shadows (subtle, restrained, no artificial glow) */
+  --shadow-subtle:0 1px 3px rgba(0,0,0,.45);
+  --shadow-card:0 2px 6px rgba(0,0,0,.4), 0 0 0 1px var(--line);
+  --shadow-dialog:0 16px 48px rgba(0,0,0,.8), 0 0 0 1px var(--line-emerald);
+
+  /* Transitions */
+  --ease-out:cubic-bezier(.22,.61,.36,1);
+  --dur-fast:150ms;
+  --dur:300ms;
+  --dur-normal:var(--dur);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font:var(--fw-regular) 14px/1.5 var(--font-sans);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+.mono,.tabular,.amt,td,th,.tip,.big,.mid,.st-val,.b-val,.ginfo,.st,.b-status,.chip,.lbl,.qchip,.seg button,.stat-val,.bcard-spent,.bcard-limit{font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.pix{font-family:var(--font-pixel);letter-spacing:.06em}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.wrap{max-width:1380px;margin:0 auto;padding:20px 24px 48px}
+
+/* Top Navigation */
+nav.top{display:flex;align-items:center;gap:18px;margin-bottom:var(--gap)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:var(--fw-bold);font-size:16px;letter-spacing:-.01em;color:var(--text)}
+.logo{display:grid;grid-template-columns:repeat(3,6px);gap:1px}
+.logo i{width:6px;height:6px;background:var(--accent)} .logo i.o{background:transparent} .logo i.d{background:var(--brand)}
+.tabs{display:flex;gap:3px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-pill);padding:4px;margin:0 auto}
+.tabs button{padding:6px 16px;border-radius:var(--r-pill);color:var(--muted);font-size:13px;font-weight:var(--fw-medium);transition:all var(--dur-fast)}
+.tabs button.on{background:var(--accent);color:var(--on-accent);font-weight:var(--fw-bold)}
+.tabs button:not(.on):hover{color:var(--text);background:rgba(255,255,255,.03)}
+.actions{display:flex;align-items:center;gap:10px}
+.ib{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--muted);position:relative;transition:all var(--dur-fast)}
+.ib:hover{color:var(--text);border-color:var(--line-strong);background:var(--surface-2)}
+.ib .dot{position:absolute;top:8px;right:8px;width:5px;height:5px;background:var(--danger);border-radius:50%}
+.me{display:flex;align-items:center;gap:9px;padding:3px 14px 3px 3px;border:1px solid var(--line);border-radius:var(--r-pill);background:var(--surface);font-size:13px;font-weight:var(--fw-medium)}
+.av{width:28px;height:28px;border-radius:50%;background:var(--surface-emerald);display:grid;place-items:center;font-size:11px;font-weight:var(--fw-bold);color:var(--text)}
+
+/* Cards & Containers */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;position:relative;min-width:0;box-shadow:var(--shadow-card)}
+.ch{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ch h3{font-size:14px;font-weight:var(--fw-semibold);letter-spacing:-.01em;color:var(--text)}
+.ch .sp{flex:1}
+.ico{width:28px;height:28px;border-radius:var(--r-sm);background:var(--brand-ghost);color:var(--pos);display:grid;place-items:center;font-size:13px}
+.ico.red{background:var(--danger-ghost);color:var(--danger)}
+.chip{font-size:11.5px;color:var(--muted);border:1px solid var(--line);border-radius:var(--r-pill);padding:4px 10px;display:inline-flex;align-items:center;gap:5px;font-weight:var(--fw-medium)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r-pill);padding:2px;background:var(--bg)}
+.seg button{font-size:11.5px;padding:4px 11px;border-radius:var(--r-pill);color:var(--muted);font-weight:var(--fw-medium);transition:all var(--dur-fast)}
+.seg button.on{background:var(--brand);color:var(--text);font-weight:var(--fw-semibold);box-shadow:inset 0 0 0 1px var(--brand)}
+.badge{font-size:11px;font-weight:var(--fw-semibold);padding:2px 8px;border-radius:4px;display:inline-flex;align-items:center;gap:4px}
+.up{background:var(--pos-ghost);color:var(--pos)} .down{background:var(--danger-ghost);color:var(--danger)}
+.big{font-size:42px;font-weight:var(--fw-bold);letter-spacing:-.03em;line-height:1}
+.big small{font-size:22px;color:var(--muted);font-weight:var(--fw-medium)}
+.mid{font-size:26px;font-weight:var(--fw-bold);letter-spacing:-.02em}
+.mid small{font-size:15px;color:var(--muted);font-weight:var(--fw-regular)}
+.sub{color:var(--muted);font-size:12px;font-weight:var(--fw-regular);line-height:1.45}
+.lbl{color:var(--muted-2);font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:var(--fw-medium)}
+
+/* Grid rows: Deliberate hierarchy */
+.row1{display:grid;grid-template-columns:1.55fr 1fr 1fr;gap:var(--gap);margin-bottom:var(--gap)}
+.row1 .card.anchor{border:1px solid var(--line-emerald);background:linear-gradient(180deg,#05241E 0%,var(--surface) 100%)}
+.row2{display:grid;grid-template-columns:.95fr 1.5fr 1.1fr;gap:var(--gap);margin-bottom:var(--gap)}
+
+/* Standardized Buttons */
+.btns{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+.btn{padding:9px 16px;border-radius:var(--r-pill);font-size:12.5px;font-weight:var(--fw-semibold);display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);background:var(--surface);color:var(--text);transition:all var(--dur-fast)}
+.btn:hover{filter:brightness(1.1);border-color:var(--line-strong)}
+.btn.pri{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:var(--fw-bold)}
+.btn.pri:hover{background:var(--accent-hover);border-color:var(--accent-hover);box-shadow:0 0 12px var(--accent-ghost)}
+.btn.dk{background:var(--surface-emerald);color:var(--text);border-color:var(--line-emerald)}
+.btn.sm{padding:6px 12px;font-size:11.5px}
+.btn.danger{background:var(--danger);border-color:var(--danger);color:var(--on-danger);font-weight:var(--fw-bold)}
+.btn:disabled{opacity:.45;cursor:not-allowed;filter:none}
+
+/* Pixel balance grid */
+.balance{display:flex;justify-content:space-between;gap:20px;align-items:flex-start}
+.pxgrid{display:grid;grid-template-columns:repeat(10,10px);grid-auto-rows:10px;gap:2px;align-self:flex-start;padding-top:4px}
+.pxgrid i{background:var(--surface-2);transition:background .3s;border-radius:1px}
+.pxgrid i.a{background:var(--pos)} .pxgrid i.b{background:var(--brand)} .pxgrid i.c{background:var(--line)}
+
+.split{display:flex;gap:12px;margin-top:16px;padding-top:14px;border-top:1px dashed var(--line);flex-wrap:wrap}
+.split > div{flex:1;min-width:85px;white-space:nowrap;border-left:2px solid var(--brand);padding-left:10px}
+.split > div:last-child{border-color:var(--danger)}
+
+/* Savings rate meter */
+.meter{display:flex;gap:3px;margin:14px 0 8px}
+.meter i{flex:1;height:12px;background:var(--surface-2);border-radius:1px}
+.meter i.on{background:var(--pos)} .meter i.tgt{box-shadow:0 0 0 1px var(--text) inset}
+.legend{display:flex;gap:14px;font-size:11.5px;color:var(--muted);flex-wrap:wrap}
+.legend span::before{content:"";display:inline-block;width:7px;height:7px;margin-right:5px;background:var(--c,var(--pos));border-radius:1px}
+
+/* Budget Donut Ring */
+.bud-hero{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-sm);padding:14px;margin-bottom:12px;text-align:center}
+.ring{width:150px;height:150px;margin:4px auto 0;display:block}
+.brow{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:12.5px}
+.brow .nm{flex:1;font-weight:var(--fw-medium)}
+.brow .full{display:none}
+body[data-view=budgets] .brow .full{display:inline}
+.bar{width:90px;height:6px;background:var(--surface-2);display:flex;gap:1px;border-radius:2px;overflow:hidden}
+.bar i{flex:1;background:var(--surface-2)}
+.bar i.on{background:var(--pos)}
+.bar i.warn{background:var(--warn)}
+.bar i.over{background:var(--danger)}
+
+/* Visual state classes for budgets */
+.b-status{font-size:10px;font-weight:var(--fw-bold);padding:2px 6px;border-radius:4px;letter-spacing:.02em;text-transform:uppercase}
+.b-status.ok{background:var(--pos-ghost);color:var(--pos)}
+.b-status.warning{background:var(--warn-ghost);color:var(--warn);border:1px solid var(--warn-line)}
+.b-status.danger{background:var(--danger-ghost);color:var(--danger)}
+
+/* Chart & Category analytics */
+.chartwrap{position:relative;height:250px}
+svg text{fill:var(--muted);font:11px var(--font-mono);font-variant-numeric:tabular-nums}
+.tip{position:absolute;pointer-events:none;transition:opacity var(--dur-fast) ease-out,left 90ms ease-out,top 90ms ease-out;background:var(--bg);border:1px solid var(--line-emerald);border-radius:var(--r-sm);padding:9px 12px;font-size:12px;min-width:160px;opacity:0;z-index:10;box-shadow:var(--shadow-card)}
+.tip b{display:block;margin-bottom:6px;font-size:11.5px;color:var(--text)}
+.tip div{display:flex;justify-content:space-between;gap:14px;color:var(--muted);margin-bottom:2px}
+.tip div span:last-child{color:var(--text);font-family:var(--font-mono)}
+
+.cat{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:var(--r-sm);cursor:pointer;font-size:12.5px;transition:all var(--dur-fast)}
+.cat:hover,.cat.on{background:var(--surface-2)}
+.cat.on{outline:1px solid var(--line-emerald)}
+.cat .sw{width:9px;height:9px;border-radius:2px}
+.cat .nm{flex:1;font-weight:var(--fw-medium)}
+.stack{display:flex;height:20px;gap:2px;margin:6px 0 12px;border-radius:2px;overflow:hidden}
+.stack i{transition:opacity var(--dur-fast)}
+.stack.f i{opacity:.25} .stack.f i.on{opacity:1}
+
+/* Goals */
+.goals{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap)}
+.goal{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column}
+.goal .px{display:grid;grid-template-columns:repeat(12,1fr);gap:2px;margin:10px 0 8px}
+.goal .px i{aspect-ratio:1;background:var(--surface-2);border-radius:1px} .goal .px i.on{background:var(--pos)}
+.promo{grid-column:1/-1;background:var(--surface);border:1px solid var(--line-emerald);border-radius:var(--r);padding:16px;display:flex;align-items:center;gap:14px;overflow:hidden;position:relative}
+.promo .pat{position:absolute;right:-4px;top:0;bottom:0;width:120px;background-image:linear-gradient(var(--brand) 1px,transparent 1px),linear-gradient(90deg,var(--brand) 1px,transparent 1px);background-size:8px 8px;opacity:.35;mask:linear-gradient(90deg,transparent,#000)}
+.ginfo{margin-top:4px;font-size:11.5px}
+.gact{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:12px}
+.addgoal{border:1px dashed var(--line-emerald);background:transparent;color:var(--pos);font:var(--fw-semibold) 13px var(--font-sans);min-height:140px;cursor:pointer;border-radius:var(--r);display:grid;place-items:center}
+.addgoal:hover{background:var(--brand-ghost);border-color:var(--accent)}
+.addgoal:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Dedicated Budgets View */
+.bud-summary-card{background:var(--surface);border:1px solid var(--line-emerald)}
+.bud-metrics,.goals-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.b-stat,.g-stat{min-width:0}
+.bud-progress-bar{height:8px;background:var(--surface-2);border-radius:var(--r-pill);overflow:hidden;margin:14px 0 10px}
+.bud-progress-fill{height:100%;border-radius:var(--r-pill);transition:width var(--dur-normal) var(--ease-out)}
+.bud-progress-fill.ok{background:var(--pos)}
+.bud-progress-fill.warn{background:var(--warn)}
+.bud-progress-fill.danger{background:var(--danger)}
+.bud-legend-row{display:flex;gap:18px;font-size:11.5px;color:var(--muted);align-items:center;flex-wrap:wrap}
+.b-legend-item{display:inline-flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.dot.ok{background:var(--pos)} .dot.warn{background:var(--warn)} .dot.danger{background:var(--danger)}
+
+.bud-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--gap);margin-top:14px}
+.bcard{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-sm);padding:16px;display:flex;flex-direction:column;gap:12px;transition:border-color var(--dur-fast),transform 90ms var(--ease-out)}
+.bcard:hover{border-color:var(--line-emerald);transform:translateY(-1px)}
+.bcard.st-danger{border-color:rgba(255,102,102,.4)}
+.bcard.st-warning{border-color:rgba(232,194,90,.4)}
+.bcard-head{display:flex;align-items:center;gap:10px}
+.bcard-ico{width:28px;height:28px;border-radius:var(--r-sm);display:grid;place-items:center;font-weight:var(--fw-bold);font-size:12px;color:var(--text)}
+.bcard-name{font-weight:var(--fw-semibold);font-size:13.5px;flex:1}
+.bcard-amounts{display:flex;justify-content:space-between;align-items:baseline}
+.bcard-spent{font-size:22px;font-weight:var(--fw-bold)}
+.bcard-limit{color:var(--muted);font-size:12px}
+.bcard-meter{height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden}
+.bcard-meter-fill{height:100%;border-radius:3px;transition:width var(--dur-normal) var(--ease-out)}
+.bcard-meter-fill.ok{background:var(--pos)}
+.bcard-meter-fill.warning{background:var(--warn)}
+.bcard-meter-fill.danger{background:var(--danger)}
+.bcard-foot{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--muted);padding-top:8px;border-top:1px dashed var(--line)}
+
+/* Dedicated Goals View */
+.goals-summary-card{background:var(--surface);border:1px solid var(--line-emerald)}
+.goals-grid-full{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:var(--gap);margin-top:14px}
+.gcard{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-sm);padding:16px;display:flex;flex-direction:column;gap:12px;transition:border-color var(--dur-fast),transform 90ms var(--ease-out)}
+.gcard:hover{border-color:var(--line-emerald);transform:translateY(-1px)}
+.gcard-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.gcard-tag{font-size:10.5px;font-weight:var(--fw-bold);padding:2px 7px;border-radius:4px;background:var(--surface-emerald);color:var(--text);font-family:var(--font-pixel);letter-spacing:.06em}
+.gcard-title{font-size:14px;font-weight:var(--fw-semibold);margin-top:2px}
+.gcard-meter{height:8px;background:var(--surface-2);border-radius:var(--r-pill);overflow:hidden}
+.gcard-meter-fill{height:100%;background:var(--accent);border-radius:var(--r-pill);transition:width var(--dur-normal) var(--ease-out)}
+.gcard-progress{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.g-suggested{font-size:11.5px;color:var(--accent);background:rgba(0,223,129,.08);border:1px solid rgba(0,223,129,.2);padding:7px 10px;border-radius:var(--r-sm);display:flex;align-items:center;gap:6px}
+.gcard-actions{display:flex;gap:6px;align-items:center;margin-top:auto;padding-top:6px}
+
+/* Goal Action Dialog */
+.ga-status-card{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 12px;font-size:12.5px}
+.quick-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.qchip{padding:5px 11px;border-radius:var(--r-pill);background:var(--surface-2);border:1px solid var(--line);color:var(--muted);font-size:11.5px;font-family:var(--font-mono);cursor:pointer;transition:all var(--dur-fast)}
+.qchip:hover{background:var(--surface-emerald);color:var(--text);border-color:var(--line-emerald)}
+.ga-preview{font-size:12px;color:var(--muted);background:var(--bg);padding:9px 12px;border-radius:var(--r-sm);border:1px dashed var(--line)}
+.ga-preview b{color:var(--text)}
+
+/* Financial Insights View */
+.insights-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--gap);margin-top:12px}
+.insight-card{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-sm);padding:18px;display:flex;flex-direction:column;gap:8px;transition:border-color var(--dur-fast)}
+.insight-card:hover{border-color:var(--line-emerald)}
+.insight-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:var(--fw-medium)}
+.insight-val{font-size:24px;font-weight:var(--fw-bold);letter-spacing:-.02em}
+.insight-desc{font-size:12px;color:var(--muted);line-height:1.45}
+.insight-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:var(--fw-semibold);width:fit-content}
+
+/* Table and Transaction List */
+.tbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.search{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:var(--r-pill);padding:6px 12px;background:var(--bg);color:var(--muted);position:relative}
+.search input{background:none;border:0;outline:0;color:var(--text);font:inherit;font-size:12.5px;width:170px}
+.search input::-webkit-search-cancel-button{display:none}
+.clear-btn{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:10px;color:var(--muted);cursor:pointer;background:none;border:0;padding:0}
+.clear-btn:hover{color:var(--text);background:var(--surface-2)}
+.active-filter-bar{display:flex;align-items:center;gap:8px;padding:6px 0 10px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.active-filter-pill{background:var(--surface-emerald);color:var(--text);padding:3px 10px;border-radius:var(--r-pill);display:inline-flex;align-items:center;gap:6px;font-weight:var(--fw-medium);font-size:12px}
+.active-filter-pill button{background:none;border:0;color:var(--muted);cursor:pointer;font-size:11px;padding:0;display:inline-flex;align-items:center}
+.active-filter-pill button:hover{color:var(--text)}
+.clear-all-btn{background:none;border:0;color:var(--muted);cursor:pointer;font-size:11.5px;text-decoration:underline;padding:2px 4px}
+.clear-all-btn:hover{color:var(--accent)}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;font-weight:var(--fw-semibold);color:var(--muted-2);text-transform:uppercase;letter-spacing:.06em;padding:12px 10px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap}
+th:hover{color:var(--text)}
+td{padding:12px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--surface-2)}
+.merch{display:flex;align-items:center;gap:10px}
+.mi{width:30px;height:30px;border-radius:var(--r-sm);display:grid;place-items:center;font-size:11px;font-weight:var(--fw-bold);font-family:var(--font-mono)}
+.amt{font-family:var(--font-mono);font-variant-numeric:tabular-nums;text-align:right;font-weight:var(--fw-semibold)}
+.amt.pos{color:var(--pos)}
+.st{font-size:11px;padding:2px 8px;border-radius:4px;border:1px solid var(--line);color:var(--muted);font-weight:var(--fw-medium)}
+.st.ok{color:var(--pos);border-color:var(--brand);background:var(--pos-ghost)}
+.st.pend{color:var(--warn);border-color:var(--warn-line);background:var(--warn-ghost)}
+.tscroll{overflow-x:auto;margin:0 -6px}
+.empty{padding:32px 20px;text-align:center;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:12px}
+
+/* Pixel Corner Accent */
+.corner::after{content:"";position:absolute;top:10px;right:10px;width:4px;height:4px;background:var(--accent);box-shadow:-6px 0 var(--brand),0 6px var(--brand)}
+
+/* Views */
+[hidden]{display:none!important}
+.row2.solo{grid-template-columns:1fr}
+.row2.solo .goals{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.tabs button:focus-visible,.btn:focus-visible,.ib:focus-visible,.seg button:focus-visible,th button:focus-visible,.cat:focus-visible,.qchip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+th button{all:inherit;cursor:pointer}
+.neg{color:var(--danger)!important}
+
+/* Row Actions */
+.ra{display:flex;gap:4px;justify-content:flex-end}
+.ra button{width:28px;height:28px;border-radius:var(--r-sm);display:grid;place-items:center;color:var(--muted);border:1px solid transparent;transition:all var(--dur-fast)}
+.ra button:hover{color:var(--text);border-color:var(--line);background:var(--bg)}
+.ra button.del:hover{color:var(--danger);border-color:rgba(255,102,102,.3)}
+.typetag{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.tfoot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:14px;color:var(--muted);font-size:12px;flex-wrap:wrap}
+select.chip{background:var(--bg);color:var(--text);font:inherit;font-size:12px;appearance:none;padding:6px 26px 6px 12px;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 13px) 50%,calc(100% - 9px) 50%;background-size:4px 4px;background-repeat:no-repeat}
+
+/* Standardized Dialogs */
+dialog{margin:auto;background:var(--surface);color:var(--text);border:1px solid var(--line-emerald);border-radius:var(--r);padding:0;width:min(480px,calc(100% - 32px));max-height:calc(100vh - 32px);box-shadow:var(--shadow-dialog)}
+#settingsDialog,#recurringDialog{width:min(540px,calc(100% - 32px))}
+dialog::backdrop{background:var(--scrim);backdrop-filter:blur(3px)}
+.dh{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--line)}
+.dh h2{font-size:15px;font-weight:var(--fw-semibold);flex:1}
+.db{padding:18px 20px;display:grid;gap:14px;overflow-y:auto;max-height:calc(100vh - 150px)}
+.df{display:flex;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid var(--line);background:rgba(0,0,0,.15)}
+.field{display:grid;gap:6px}
+.field label,.field legend{font-size:11.5px;color:var(--muted);font-weight:var(--fw-medium)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.inp{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 12px;color:var(--text);font:inherit;font-size:13px;width:100%;color-scheme:dark;transition:border-color var(--dur-fast)}
+.inp:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.inp[aria-invalid=true]{border-color:var(--danger)}
+.money{position:relative}
+.money span{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-family:var(--font-mono);font-size:12.5px;pointer-events:none}
+.money .inp{padding-left:34px;font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:18px;font-weight:var(--fw-bold)}
+.err{color:var(--danger);font-size:11.5px;min-height:0}
+.err:empty{display:none}
+.typeseg{display:grid;grid-template-columns:1fr 1fr;gap:4px;border:1px solid var(--line);border-radius:8px;padding:3px;margin:0;background:var(--bg)}
+.typeseg label{text-align:center;padding:8px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:var(--fw-semibold);color:var(--muted);transition:all var(--dur-fast)}
+.typeseg input{position:absolute;opacity:0;pointer-events:none}
+.typeseg input:focus-visible+span{outline:2px solid var(--accent);outline-offset:4px}
+.typeseg label:has(input[value=expense]:checked){background:var(--danger-ghost);color:var(--danger)}
+.typeseg label:has(input[value=income]:checked){background:var(--pos-ghost);color:var(--pos)}
+
+/* Motion & Animation (150ms-300ms, restrained) */
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#chart{touch-action:pan-y;outline:0;border-radius:var(--r-sm);cursor:crosshair}
+#chart:focus-visible{box-shadow:0 0 0 2px var(--accent)}
+.tip.show{opacity:1}
+.cbar{transform-box:fill-box;transform-origin:50% 100%}
+.enter .cbar{animation:bar-rise var(--dur) var(--ease-out) both;animation-delay:calc(var(--i) * 24ms)}
+.enter .netl{animation:fade-in 240ms ease-out both;animation-delay:calc(var(--n) * 24ms + 100ms)}
+@keyframes bar-rise{from{transform:scaleY(0)}}
+@keyframes fade-in{from{opacity:0}}
+.xh line{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3;pointer-events:none}
+.xh-band{fill:var(--brand-ghost);pointer-events:none}
+.xh-lbl{fill:var(--surface-2);stroke:var(--line)}
+.xh-t{fill:var(--text)!important;font-size:10px!important;font-family:var(--font-mono)}
+.fresh{animation:seg-in 220ms var(--ease-out) both;animation-delay:calc(var(--k) * 20ms)}
+@keyframes seg-in{from{background-color:var(--surface-2);transform:scaleY(.35)}}
+#ring rect.fresh{animation:ring-in 180ms ease-out both;animation-delay:calc(var(--k) * 12ms)}
+@keyframes ring-in{from{fill:var(--surface-2)}}
+dialog[open]{animation:dlg-in 180ms var(--ease-out)}
+@keyframes dlg-in{from{opacity:0;transform:translateY(6px)}}
+
+.btn,.ib,.tabs button,.seg button,.ra button,.cat,.goal,.addgoal,tbody tr,.qchip{transition:background-color var(--dur-fast),color var(--dur-fast),border-color var(--dur-fast),transform 90ms var(--ease-out),filter var(--dur-fast)}
+.btn:active,.ib:active,.ra button:active,.seg button:active,.tabs button:active,.addgoal:active,.cat:active,.qchip:active{transform:scale(.97)}
+
+@media (hover:hover){
+  .ib:hover{background:var(--surface-2)}
+  .goal:not(.addgoal):hover{border-color:var(--line-strong);transform:translateY(-1px)}
+  .seg button:not(.on):hover{color:var(--text)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:1ms!important;animation-delay:0s!important;transition-duration:1ms!important;transition-delay:0s!important}
+}
+
+/* Toast & Notice */
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--surface);border:1px solid var(--line-emerald);padding:10px 18px;border-radius:var(--r-sm);font-size:13px;opacity:0;transition:all var(--dur-normal) var(--ease-out);z-index:100;pointer-events:none;max-width:calc(100% - 32px);box-shadow:var(--shadow-dialog)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.notice{background:var(--warn-ghost);border:1px solid var(--warn-line);color:var(--warn);border-radius:var(--r-sm);padding:10px 14px;font-size:12.5px;margin-bottom:var(--gap)}
+.restore-preview{background:var(--bg);border:1px solid var(--line-emerald);border-radius:var(--r-sm);padding:12px 14px;display:grid;gap:10px;font-size:12.5px}
+.restore-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
+.restore-stat{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:4px}
+.restore-warn{background:var(--warn-ghost);border:1px solid var(--warn-line);color:var(--warn);border-radius:var(--r-sm);padding:8px 10px;font-size:11.5px;line-height:1.4}
+.restore-err{background:var(--danger-ghost);border:1px solid rgba(255,102,102,.35);color:var(--danger);border-radius:var(--r-sm);padding:10px 12px;font-size:12px;line-height:1.45}
+.restore-replace-note{background:var(--surface-2);border-left:3px solid var(--accent);padding:8px 10px;font-size:11.5px;color:var(--muted);line-height:1.45}
+.app-footer{margin-top:24px;padding-top:16px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-size:11.5px;color:var(--muted)}
+.app-footer-links{display:flex;gap:10px;flex-wrap:wrap}
+
+/* Phase 6: Offline Status, Quick-Add Bar, Recurring & Settings */
+.offline-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:var(--r-pill);background:var(--warn-ghost);border:1px solid var(--warn-line);color:var(--warn);font-size:11.5px;font-weight:var(--fw-semibold)}
+.offline-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--warn)}
+.qa-card{margin-bottom:var(--gap);padding:14px 18px;border:1px solid var(--line-emerald);background:linear-gradient(180deg,rgba(0,101,79,.12),var(--surface))}
+.qa-form{display:grid;grid-template-columns:auto 135px 1fr 165px auto;gap:8px;align-items:center}
+.qa-form .inp{padding:7px 10px;font-size:12.5px}
+.qa-form .money .inp{padding-left:32px;font-size:13px;font-weight:var(--fw-semibold)}
+.qa-recents{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;color:var(--muted)}
+.qa-chip{padding:2px 9px;border-radius:var(--r-pill);border:1px solid var(--line);background:var(--bg);color:var(--muted);font-size:11px;cursor:pointer;transition:all var(--dur-fast)}
+.qa-chip:hover,.qa-chip.on{border-color:var(--accent);color:var(--accent);background:var(--pos-ghost)}
+
+.rec-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:var(--gap);margin-bottom:var(--gap)}
+.rec-list,.up-list{display:grid;gap:8px}
+.rec-item,.up-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r-sm);background:var(--bg);border:1px solid var(--line);font-size:12.5px}
+.rec-item.paused{opacity:.68;border-style:dashed}
+.rec-meta{flex:1;min-width:0}
+.rec-title{font-weight:var(--fw-semibold);color:var(--text);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.rec-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+.freq-tag{font-size:10.5px;padding:1px 7px;border-radius:4px;background:var(--surface-emerald-ghost);border:1px solid var(--line-emerald);color:var(--text);text-transform:uppercase;letter-spacing:.04em}
+.settings-sec{border-top:1px solid var(--line);padding-top:12px;display:grid;gap:10px}
+.settings-sec:first-child{border-top:0;padding-top:0}
+.settings-sec h3,.settings-sec h4{font-size:12px;font-weight:var(--fw-semibold);color:var(--accent);text-transform:uppercase;letter-spacing:.05em}
+.cat-pills{display:flex;flex-wrap:wrap;gap:6px}
+.cat-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:var(--r-pill);background:var(--bg);border:1px solid var(--line);font-size:11.5px;color:var(--text)}
+.cat-pill.custom{border-color:var(--line-emerald);background:var(--surface-emerald-subtle)}
+.cat-pill button{color:var(--muted);font-size:11px;line-height:1;padding:0 2px}
+.cat-pill button:hover{color:var(--danger)}
+.sync-box{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 12px;font-size:11.5px;color:var(--muted);line-height:1.45;display:grid;gap:6px}
+.mob-meta{display:none;font-size:11px;color:var(--muted);margin-top:2px}
+
+/* Pixel-Segmented Terminal Bars (Stinger Reference) */
+.px-bar{display:flex;gap:2px;height:8px;align-items:stretch}
+.px-bar.lg{height:10px;gap:3px;margin:14px 0 10px}
+.px-bar.sm{height:6px;gap:1.5px;width:72px;flex-shrink:0}
+.px-bar i{flex:1;background:var(--surface-2);border-radius:1px;transition:background-color var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out)}
+.px-bar i.on{background:var(--pos)}
+.px-bar i.warn{background:var(--warn)}
+.px-bar i.over{background:var(--danger)}
+.cbar rect.px-seg{transition:fill var(--dur-fast),opacity var(--dur-fast)}
+.enter .cbar rect.px-seg{animation:seg-pop 200ms var(--ease-out) both;animation-delay:calc(var(--i,0) * 20ms + var(--seg-i,0) * 9ms)}
+@keyframes seg-pop{from{opacity:0;transform:scaleY(.2)}}
+.cbar:hover rect.px-seg{filter:brightness(1.2)}
+.cat:hover .px-bar i.on,.cat:focus-visible .px-bar i.on{filter:brightness(1.18)}
+
+/* Multi-Currency & Account Denomination Controls */
+.fx-pill{font-size:11px;padding:4px 9px;border-radius:var(--r-pill);border:1px solid var(--line-emerald);background:var(--bg);color:var(--accent);font-family:var(--font-mono);display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.fx-pill.warn{border-color:var(--warn-line);color:var(--warn);background:var(--warn-ghost)}
+.acct-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:var(--r-sm);background:var(--bg);border:1px solid var(--line);font-size:12px}
+.acct-card-btn{background:none;border:0;color:var(--muted);font-size:10px;cursor:pointer;padding:1px 5px;border-radius:3px;border:1px solid var(--line);margin-left:4px}
+.acct-card-btn:hover{color:var(--accent);border-color:var(--line-emerald)}
+
+/* Compact Application Footer */
+.app-footer{margin-top:28px;padding:18px 0 8px;border-top:1px solid var(--line);display:grid;gap:12px;font-size:11.5px;color:var(--muted)}
+.footer-main{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.footer-brand{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.footer-ver{font-family:var(--font-mono);font-size:10.5px;padding:1px 7px;border-radius:4px;background:var(--surface);border:1px solid var(--line-emerald);color:var(--accent)}
+.footer-nav{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.footer-nav a,.footer-nav button{color:var(--muted);text-decoration:none;font-size:11.5px;background:none;border:0;cursor:pointer;padding:2px 0;transition:color var(--dur-fast)}
+.footer-nav a:hover,.footer-nav button:hover{color:var(--accent);text-decoration:underline}
+.footer-meta{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding-top:10px;border-top:1px dashed var(--line);font-size:11px;color:var(--muted-2)}
+.sys-status{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+.sys-dot{width:6px;height:6px;border-radius:50%;background:var(--pos);display:inline-block}
+.sys-dot.warn{background:var(--warn)}
+.info-tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px}
+.info-tabs button{padding:5px 10px;border-radius:var(--r-sm);font-size:11.5px;color:var(--muted);border:1px solid transparent}
+.info-tabs button.on{background:var(--surface-emerald);color:var(--text);border-color:var(--line-emerald);font-weight:var(--fw-semibold)}
+
+/* Responsive Design */
+@media (max-width:1100px){
+  .row1{grid-template-columns:1fr 1fr}
+  .row1 > :first-child{grid-column:1/-1}
+  .row2{grid-template-columns:1fr 1fr}
+  .row2 > .chartcard{grid-column:1/-1;order:-1}
+  nav.top{flex-wrap:wrap}
+  .tabs{order:3;width:100%;overflow-x:auto;margin:0;scrollbar-width:none}
+  .tabs button{flex:1;white-space:nowrap}
+  .bud-metrics,.goals-metrics{grid-template-columns:1fr 1fr}
+  .qa-form{grid-template-columns:auto 1fr 1fr;gap:8px}
+  .rec-grid{grid-template-columns:1fr}
+}
+
+@media (max-width:680px){
+  .wrap{padding:14px 16px 36px}
+  .row1,.row2{grid-template-columns:1fr}
+  .row1 > *,.row2 > *{grid-column:auto!important}
+  .big{font-size:32px}
+  .mid{font-size:22px}
+  .pxgrid{display:none}
+  .me span{display:none}
+  .me{padding:3px}
+  #fxBadge{display:none}
+  .actions{margin-left:auto;gap:6px}
+  .tbar{flex-direction:column;align-items:stretch;gap:12px}
+  .search{width:100%}
+  .search input{width:100%}
+  .chartwrap{height:220px}
+  #cats{grid-template-columns:1fr!important}
+  .two{grid-template-columns:1fr}
+  .goals{grid-template-columns:1fr}
+  .bud-metrics,.goals-metrics{grid-template-columns:1fr}
+  .qa-form{grid-template-columns:1fr}
+  .col-acct,.col-status,.col-cat{display:none}
+  .mob-meta{display:block}
+  td{white-space:normal} td.amt{white-space:nowrap}
+  td,th{padding-left:8px;padding-right:8px}
+  .ra{gap:2px}
+  .ra button{width:32px;height:32px}
+  .btn.sm{padding:7px 12px}
+  .tabs button{padding:8px 14px}
+  .tscroll{margin:0 -8px}
+  .footer-main,.footer-meta{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="top" aria-label="Primary">
+  <div class="brand"><div class="logo" aria-hidden="true"><i></i><i></i><i class="o"></i><i class="d"></i><i></i><i></i><i class="o"></i><i class="d"></i><i></i></div>Dark Forest</div>
+  <div class="tabs" id="tabs" role="tablist">
+    <button role="tab" data-view="overview">Overview</button><button role="tab" data-view="transactions">Transactions</button><button role="tab" data-view="budgets">Budgets</button><button role="tab" data-view="goals">Goals</button><button role="tab" data-view="reports">Reports</button>
+  </div>
+  <div class="actions">
+    <span class="offline-pill" id="netStatus" role="status" aria-live="polite" hidden>Offline · Local mode</span>
+    <span class="fx-pill" id="fxBadge" title="Active exchange rate for reporting currency" hidden></span>
+    <select class="chip" id="topCurrencySelect" aria-label="Reporting currency" title="Dashboard reporting currency (converts displayed totals without altering stored records)"></select>
+    <button class="btn sm dk" id="installBtn" title="Install Dark Forest Finance as an app" hidden>↓ Install App</button>
+    <button class="ib" id="focusSearch" title="Search transactions" aria-label="Search transactions"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6.5" cy="6.5" r="5"/><path d="m10.5 10.5 3.5 3.5"/></svg></button>
+    <button class="ib" title="Add transaction" aria-label="Add transaction" data-add="expense"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M7.5 2v11M2 7.5h11"/></svg></button>
+    <button class="ib" id="openSettingsBtn" title="Settings, currencies, categories &amp; sync" aria-label="Settings, currencies, categories and sync">⚙</button>
+    <div class="me" title="Active session: Operator"><div class="av">OP</div><span>Operator</span></div>
+  </div>
+</nav>
+
+<div class="notice" id="notice" role="alert" hidden></div>
+
+<!-- ROW 1: KPIs -->
+<section class="row1" data-views="overview transactions reports">
+  <div class="card anchor">
+    <div class="ch">
+      <div class="ico"><svg width="14" height="14" fill="currentColor"><rect x="1" y="3" width="12" height="9"/><rect x="9" y="6" width="3" height="3" style="fill:var(--surface)"/></svg></div>
+      <h3>Net balance <span class="sub" style="font-weight:400">· recorded transactions</span></h3><span class="sp"></span>
+      <div class="seg" id="period" role="group" aria-label="Period"><button data-p="1">1M</button><button data-p="3">3M</button><button data-p="6">6M</button><button data-p="12">1Y</button></div>
+    </div>
+    <div class="balance">
+      <div style="min-width:0">
+        <div class="big mono" id="bal">$0</div>
+        <div class="sub" style="margin-top:10px" id="balDelta"></div>
+        <div class="split" id="accounts" style="flex-wrap:wrap"></div>
+      </div>
+      <div class="pxgrid" id="pxgrid" title="Net balance at each month end, pixel view" aria-hidden="true"></div>
+    </div>
+    <div class="btns">
+      <button class="btn pri" data-add="expense">− Add expense</button>
+      <button class="btn dk" data-add="income">+ Add income</button>
+      <button class="btn" data-rnew title="Create recurring income or expense">⟳ Recurring</button>
+      <button class="btn" id="exportCsvBtn" title="Export transactions to CSV">↓ Export CSV</button>
+      <button class="btn" id="exportBtn" title="Download full JSON backup">↓ Backup JSON</button>
+      <button class="btn" id="restoreBtn" title="Restore from a JSON backup file">↑ Restore backup</button>
+    </div>
+  </div>
+
+  <div class="card corner">
+    <div class="ch"><div class="ico">↓</div><h3>Income</h3><span class="sp"></span><span class="chip" id="incPeriod"></span></div>
+    <div class="mid mono" id="inc"></div>
+    <div style="margin-top:8px"><span class="badge" id="incBadge"></span> <span class="sub">vs previous period</span></div>
+    <div class="split" id="incSplit"></div>
+  </div>
+
+  <div class="card">
+    <div class="ch"><div class="ico red">↑</div><h3>Expenses</h3><span class="sp"></span><span class="badge" id="rateBadge"></span></div>
+    <div class="mid mono" id="exp"></div>
+    <div style="margin-top:8px"><span class="badge" id="expBadge"></span> <span class="sub">vs previous period</span></div>
+    <div style="margin-top:14px;display:flex;justify-content:space-between" class="sub"><span>Net cash flow</span><span class="mono" style="color:var(--text)" id="net"></span></div>
+    <div style="margin-top:4px;display:flex;justify-content:space-between" class="sub"><span>Savings rate</span><span class="mono" style="color:var(--text)" id="rate"></span></div>
+    <div class="meter" id="meter" aria-hidden="true"></div>
+    <div class="legend"><span>Saved</span><span style="--c:var(--surface-2)">Spent</span><span style="--c:transparent"><span style="display:inline-block;width:7px;height:7px;box-shadow:0 0 0 1px var(--text) inset;margin-right:5px"></span>30% target</span></div>
+  </div>
+</section>
+
+<!-- ROW 2: analytics -->
+<section class="row2" id="row2" data-views="overview reports">
+  <div class="card" id="budgetCard" data-views="overview">
+    <div class="ch"><div class="ico">◎</div><h3>Monthly budget</h3><span class="sp"></span><span class="chip" id="budMonth"></span><button class="ib sm" data-btotal aria-label="Edit monthly budget total" title="Edit monthly total">✎</button></div>
+    <div class="bud-hero">
+      <div class="lbl" id="budLabel"></div>
+      <svg class="ring" viewBox="0 0 150 150" id="ring" role="img"></svg>
+    </div>
+    <div class="budlist">
+      <div id="budgets"></div>
+      <button class="btn sm" id="addBudget" data-bnew style="margin-top:12px">+ Add budget</button>
+    </div>
+  </div>
+
+  <div class="card chartcard" data-views="overview reports">
+    <div class="ch"><div class="ico">▤</div><h3>Income vs expenses</h3><span class="sp"></span>
+      <div class="legend"><span>Income</span><span style="--c:var(--danger)">Expenses</span><span style="--c:var(--text)">Net</span></div>
+    </div>
+    <div class="chartwrap" id="chart" tabindex="0" role="group" aria-label="Income versus expenses by month. Use the left and right arrow keys to inspect a month." aria-describedby="chartSummary"><div class="tip" id="tip" aria-hidden="true"></div></div>
+    <p class="sr" id="chartSummary"></p><p class="sr" id="chartLive" aria-live="polite"></p>
+    <div class="ch" style="margin:18px 0 6px"><h3>Spending by category</h3><span class="sp"></span><span class="sub" id="catTotal"></span></div>
+    <div class="stack" id="stack" aria-hidden="true"></div>
+    <div id="cats" style="display:grid;grid-template-columns:1fr 1fr;column-gap:10px"></div>
+  </div>
+
+  <div class="goals" id="goalsWrap" data-views="overview" style="align-content:start">
+    <div id="goalList" style="display:contents"></div>
+    <div class="promo" id="promo">
+      <div class="pat"></div>
+      <div style="position:relative">
+        <div class="pix" style="font-size:10px;color:var(--accent)" id="lvl"></div>
+        <div style="font-weight:600;margin-top:4px" id="streakTitle"></div>
+        <div class="sub">Months in a row with a savings rate of 30% or more.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEDICATED BUDGETS VIEW -->
+<section class="budgets-view" data-views="budgets" style="margin-bottom:var(--gap)">
+  <div class="card bud-summary-card" style="margin-bottom:var(--gap)">
+    <div class="ch">
+      <div class="ico">◎</div>
+      <h3>Monthly Budget Overview</h3>
+      <span class="sp"></span>
+      <span class="chip" id="budMonthFull"></span>
+      <button class="btn sm dk" data-btotal aria-label="Edit monthly limit">✎ Edit Monthly Limit</button>
+      <button class="btn sm pri" data-bnew id="addBudgetFull">+ Add Category Budget</button>
+    </div>
+    <div class="bud-metrics" id="budMetrics">
+      <div class="b-stat">
+        <div class="lbl">Total Budgeted</div>
+        <div class="mid mono" id="bmTotalBudget">$0</div>
+        <div class="sub" id="bmBudgetSub">Across categories</div>
+      </div>
+      <div class="b-stat">
+        <div class="lbl">Actual Spent</div>
+        <div class="mid mono" id="bmTotalSpent">$0</div>
+        <div class="sub" id="bmSpentSub">This month</div>
+      </div>
+      <div class="b-stat">
+        <div class="lbl">Remaining Budget</div>
+        <div class="mid mono" id="bmTotalRemaining">$0</div>
+        <div class="sub" id="bmRemainingSub">Available</div>
+      </div>
+      <div class="b-stat">
+        <div class="lbl">Overall Budget Used</div>
+        <div class="mid mono" id="bmPercentUsed">0%</div>
+        <div class="sub" id="bmPercentSub">Overall status</div>
+      </div>
+    </div>
+    <div class="px-bar lg" id="budOverallBar" aria-label="Overall monthly budget usage"></div>
+    <div class="bud-legend-row">
+      <span class="b-legend-item"><span class="dot ok"></span> On track (&lt;80%)</span>
+      <span class="b-legend-item"><span class="dot warn"></span> Near limit (80%–100%)</span>
+      <span class="b-legend-item"><span class="dot danger"></span> Over budget (&gt;100%)</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">
+      <div class="ico">◫</div>
+      <h3>Category Budgets</h3>
+      <span class="sp"></span>
+      <span class="sub" id="budCountFull"></span>
+    </div>
+    <div class="bud-grid" id="budgetsGrid"></div>
+  </div>
+</section>
+
+<!-- DEDICATED GOALS VIEW -->
+<section class="goals-view" data-views="goals" style="margin-bottom:var(--gap)">
+  <div class="card goals-summary-card" style="margin-bottom:var(--gap)">
+    <div class="ch">
+      <div class="ico">★</div>
+      <h3>Savings Goals Summary</h3>
+      <span class="sp"></span>
+      <button class="btn sm pri" data-gnew>+ New Savings Goal</button>
+    </div>
+    <div class="goals-metrics" id="goalsMetrics">
+      <div class="g-stat">
+        <div class="lbl">Total Target</div>
+        <div class="mid mono" id="gmTarget">$0</div>
+        <div class="sub">Across all goals</div>
+      </div>
+      <div class="g-stat">
+        <div class="lbl">Total Saved</div>
+        <div class="mid mono" id="gmSaved">$0</div>
+        <div class="sub" id="gmSavedPct">0% of target</div>
+      </div>
+      <div class="g-stat">
+        <div class="lbl">Remaining to Save</div>
+        <div class="mid mono" id="gmRemaining">$0</div>
+        <div class="sub">To reach all targets</div>
+      </div>
+      <div class="g-stat">
+        <div class="lbl">Monthly Required</div>
+        <div class="mid mono" id="gmMonthlyReq">$0</div>
+        <div class="sub">To meet active deadlines</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">
+      <div class="ico">◈</div>
+      <h3>Active Savings Goals</h3>
+      <span class="sp"></span>
+      <span class="sub" id="goalsCountFull"></span>
+    </div>
+    <div class="goals-grid-full" id="goalsGridFull"></div>
+  </div>
+</section>
+
+<!-- DEDICATED REPORTS / INSIGHTS VIEW -->
+<section class="reports-view" data-views="reports" style="margin-bottom:var(--gap)">
+  <div class="card">
+    <div class="ch">
+      <div class="ico">✦</div>
+      <h3>Financial Insights</h3>
+      <span class="sp"></span>
+      <span class="chip" id="insightsPeriod"></span>
+    </div>
+    <div class="insights-grid" id="insightsGrid"></div>
+  </div>
+</section>
+
+<!-- QUICK-ADD BAR (Everyday Fast Entry) -->
+<section class="card qa-card" id="quickAddSection" data-views="overview transactions" aria-label="Quick transaction entry">
+  <div class="ch" style="margin-bottom:8px">
+    <div class="ico">⚡</div>
+    <h3>Quick Entry</h3>
+    <span class="sub">Defaults to Today &amp; Checking · Press Enter to log</span>
+    <span class="sp"></span>
+    <button type="button" class="btn sm" id="qaFullBtn" title="Open full transaction form with notes &amp; account selection">Full form…</button>
+  </div>
+  <form id="quickAddForm" class="qa-form" novalidate>
+    <select class="inp" id="qaType" name="type" aria-label="Transaction type">
+      <option value="expense">− Expense</option>
+      <option value="income">+ Income</option>
+    </select>
+    <div class="money">
+      <span>$</span>
+      <input class="inp" id="qaAmount" name="amount" inputmode="decimal" autocomplete="off" placeholder="0.00" aria-label="Amount">
+    </div>
+    <input class="inp" id="qaDesc" name="description" maxlength="80" autocomplete="off" placeholder="Merchant or description (e.g., Coffee, Payroll)…" aria-label="Description or merchant">
+    <select class="inp" id="qaCat" name="category" aria-label="Category"></select>
+    <button type="submit" class="btn pri" id="qaSubmit">+ Log Today</button>
+  </form>
+  <p class="err" id="qaError" role="alert"></p>
+  <div class="qa-recents" id="qaRecentCats" aria-label="Recently used categories"></div>
+</section>
+
+<!-- RECURRING TRANSACTIONS & UPCOMING SCHEDULED -->
+<section class="rec-grid" id="recurringSection" data-views="overview transactions" style="margin-bottom:var(--gap)" aria-label="Recurring schedules and upcoming transactions">
+  <div class="card">
+    <div class="ch">
+      <div class="ico">⟳</div>
+      <h3>Recurring Schedules</h3>
+      <span class="sp"></span>
+      <span class="sub" id="recCountLabel"></span>
+      <button type="button" class="btn sm" data-rnew>+ New schedule</button>
+    </div>
+    <div class="rec-list" id="recurringList"></div>
+  </div>
+  <div class="card">
+    <div class="ch">
+      <div class="ico">◷</div>
+      <h3>Upcoming Scheduled (Next 90d)</h3>
+      <span class="sp"></span>
+      <span class="chip" title="Excluded from current balances and budget spending until their scheduled date arrives">Excluded until due</span>
+    </div>
+    <div class="rec-list" id="upcomingList"></div>
+  </div>
+</section>
+
+<!-- TABLE -->
+<section class="card" data-views="overview transactions">
+  <div class="ch tbar">
+    <div class="ico">↺</div><h3 id="tableTitle">Recent transactions</h3><span class="sp"></span>
+    <div class="seg" id="typeFilter" role="group" aria-label="Transaction type"><button data-t="all" class="on">All</button><button data-t="income">Income</button><button data-t="expense">Expenses</button></div>
+    <select class="chip" id="catFilter" aria-label="Category filter"></select>
+    <label class="search"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="5.5" cy="5.5" r="4.5"/><path d="m9 9 3 3"/></svg><input id="q" type="search" placeholder="Search transactions…" aria-label="Search transactions"><button type="button" id="clearSearch" class="clear-btn" aria-label="Clear search" title="Clear search" hidden>✕</button></label>
+  </div>
+  <div id="activeFilterBar" class="active-filter-bar" hidden></div>
+  <div class="tscroll">
+    <table>
+      <thead><tr>
+        <th data-k="description"><button>Description</button></th><th data-k="category" class="col-cat"><button>Category</button></th><th data-k="account" class="col-acct"><button>Account</button></th><th data-k="date"><button>Date</button></th><th class="col-status">Status</th><th data-k="amount" style="text-align:right"><button>Amount</button></th><th><span class="sr" style="position:absolute;left:-9999px">Actions</span></th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <div class="tfoot">
+    <span id="count"></span>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn sm" id="exportCsvTableBtn" title="Export transactions to CSV">↓ Export CSV</button>
+      <button class="btn" id="moreBtn">View all transactions →</button>
+    </div>
+  </div>
+</section>
+
+<footer class="app-footer" aria-label="Application information, documentation, and system status">
+  <div class="footer-main">
+    <div class="footer-brand">
+      <div class="brand" style="font-size:13px"><div class="logo" aria-hidden="true"><i></i><i></i><i class="o"></i><i class="d"></i><i></i><i></i><i class="o"></i><i class="d"></i><i></i></div>Dark Forest Finance</div>
+      <span class="footer-ver">v2.6.0</span>
+      <span class="sub">© 2026 Dark Forest Finance</span>
+    </div>
+    <nav class="footer-nav" aria-label="Footer navigation">
+      <button type="button" data-open-info="about">About</button>
+      <button type="button" data-open-info="help">Help &amp; Docs</button>
+      <button type="button" data-open-info="privacy">Privacy</button>
+      <button type="button" data-open-info="terms">Terms</button>
+      <button type="button" data-open-info="feedback">Feedback &amp; Data Tools</button>
+      <a href="tests.html">Test Suite (56+)</a>
+    </nav>
+    <div class="app-footer-links">
+      <button type="button" class="btn sm" data-trigger-csv>↓ Export CSV</button>
+      <button type="button" class="btn sm" data-trigger-backup>↓ Backup JSON</button>
+      <button type="button" class="btn sm" data-trigger-restore>↑ Restore Backup</button>
+    </div>
+  </div>
+  <div class="footer-meta">
+    <div>
+      <strong>Local storage notice:</strong> Financial records are stored locally in this browser (<code>localStorage</code>) and are never transmitted to external servers. Publishing or opening this site on another device does not automatically transfer local browser data—use <em>Backup JSON</em> / <em>Restore Backup</em> to move records across devices.
+    </div>
+    <div class="sys-status" id="footerSysStatus" role="status">
+      <span class="sys-dot" id="footerSysDot"></span>
+      <span id="footerSysText">Storage: Local v2 OK · FX: Active</span>
+    </div>
+  </div>
+</footer>
+</div>
+
+<!-- Add / edit dialog -->
+<dialog id="txDialog" aria-labelledby="txTitle">
+  <form id="txForm" novalidate>
+    <div class="dh"><h2 id="txTitle">Add transaction</h2><button type="button" class="ib" data-close aria-label="Close">✕</button></div>
+    <div class="db">
+      <fieldset class="typeseg"><legend style="position:absolute;left:-9999px">Type</legend>
+        <label><input type="radio" name="type" value="expense"><span>Expense</span></label>
+        <label><input type="radio" name="type" value="income"><span>Income</span></label>
+      </fieldset>
+      <div class="field"><label for="fAmount">Amount</label>
+        <div class="money"><span>$</span><input class="inp" id="fAmount" name="amount" inputmode="decimal" autocomplete="off" placeholder="0.00" aria-describedby="e-amount"></div>
+        <p class="err" id="e-amount"></p></div>
+      <div class="field"><label for="fDesc">Description or merchant</label>
+        <input class="inp" id="fDesc" name="description" maxlength="80" autocomplete="off" aria-describedby="e-description"><p class="err" id="e-description"></p></div>
+      <div class="two">
+        <div class="field"><label for="fCat">Category</label><select class="inp" id="fCat" name="category" aria-describedby="e-category"></select><p class="err" id="e-category"></p></div>
+        <div class="field"><label for="fDate">Date</label><input class="inp" type="date" id="fDate" name="date" min="1900-01-01" max="2100-12-31" aria-describedby="e-date"><p class="err" id="e-date"></p></div>
+      </div>
+      <div class="field"><label for="fAcct">Account</label><select class="inp" id="fAcct" name="account" aria-describedby="e-account"></select><p class="err" id="e-account"></p></div>
+      <div class="field"><label for="fNote">Note <span style="color:var(--muted-2)">(optional)</span></label><input class="inp" id="fNote" name="note" maxlength="140" autocomplete="off" aria-describedby="e-note"><p class="err" id="e-note"></p></div>
+    </div>
+    <div class="df"><button type="button" class="btn" data-close>Cancel</button><button type="submit" class="btn pri" id="saveBtn">Save</button></div>
+  </form>
+</dialog>
+
+<!-- Budget dialog -->
+<dialog id="budgetDialog" aria-labelledby="bTitle">
+  <form id="budgetForm" novalidate>
+    <div class="dh"><h2 id="bTitle">Add budget</h2><button type="button" class="ib" data-close aria-label="Close">✕</button></div>
+    <div class="db">
+      <div class="field"><label for="bCat">Category</label><select class="inp" id="bCat" name="category" aria-describedby="eb-category"></select><p class="err" id="eb-category" data-err="category"></p></div>
+      <div class="field"><label for="bLimit">Monthly limit</label><div class="money"><span>$</span><input class="inp" id="bLimit" name="limit" inputmode="decimal" autocomplete="off" placeholder="0.00" aria-describedby="eb-limit"></div><p class="err" id="eb-limit" data-err="limit"></p></div>
+    </div>
+    <div class="df"><button type="button" class="btn" data-close>Cancel</button><button type="submit" class="btn pri">Save</button></div>
+  </form>
+</dialog>
+
+<!-- Goal dialog -->
+<dialog id="goalDialog" aria-labelledby="gTitle">
+  <form id="goalForm" novalidate>
+    <div class="dh"><h2 id="gTitle">New goal</h2><button type="button" class="ib" data-close aria-label="Close">✕</button></div>
+    <div class="db">
+      <div class="field"><label for="gName">Name</label><input class="inp" id="gName" name="name" maxlength="40" autocomplete="off" aria-describedby="eg-name"><p class="err" id="eg-name" data-err="name"></p></div>
+      <div class="two">
+        <div class="field"><label for="gTarget">Target</label><div class="money"><span>$</span><input class="inp" id="gTarget" name="target" inputmode="decimal" autocomplete="off" placeholder="0.00" aria-describedby="eg-target"></div><p class="err" id="eg-target" data-err="target"></p></div>
+        <div class="field"><label for="gSaved">Already saved</label><div class="money"><span>$</span><input class="inp" id="gSaved" name="saved" inputmode="decimal" autocomplete="off" placeholder="0.00" aria-describedby="eg-saved"></div><p class="err" id="eg-saved" data-err="saved"></p></div>
+      </div>
+      <div class="two">
+        <div class="field"><label for="gDeadline">Deadline <span style="color:var(--muted-2)">(optional)</span></label><input class="inp" type="date" id="gDeadline" name="deadline" min="1900-01-01" max="2100-12-31" aria-describedby="eg-deadline"><p class="err" id="eg-deadline" data-err="deadline"></p></div>
+        <div class="field"><label for="gTag">Badge</label><select class="inp pix" id="gTag" name="tag"></select></div>
+      </div>
+    </div>
+    <div class="df"><button type="button" class="btn" data-close>Cancel</button><button type="submit" class="btn pri">Save</button></div>
+  </form>
+</dialog>
+
+<!-- Goal Contribution / Withdrawal Dialog -->
+<dialog id="goalActionDialog" aria-labelledby="gaTitle">
+  <form id="goalActionForm" novalidate>
+    <div class="dh"><h2 id="gaTitle">Contribute to goal</h2><button type="button" class="ib" data-close aria-label="Close">✕</button></div>
+    <div class="db">
+      <div class="ga-status-card" id="gaStatusCard"></div>
+      <fieldset class="typeseg" id="gaTypeSeg">
+        <legend style="position:absolute;left:-9999px">Action type</legend>
+        <label><input type="radio" name="type" value="deposit" checked><span>+ Contribute</span></label>
+        <label><input type="radio" name="type" value="withdraw"><span>− Withdraw</span></label>
+      </fieldset>
+      <div class="field">
+        <label for="gaAmount" id="gaAmountLabel">Contribution amount</label>
+        <div class="money"><span>$</span><input class="inp" id="gaAmount" name="amount" inputmode="decimal" autocomplete="off" placeholder="0.00" aria-describedby="ega-amount"></div>
+        <p class="err" id="ega-amount" data-err="amount"></p>
+      </div>
+      <div class="quick-chips" id="gaChips">
+        <button type="button" class="qchip" data-val="25">+$25</button>
+        <button type="button" class="qchip" data-val="50">+$50</button>
+        <button type="button" class="qchip" data-val="100">+$100</button>
+        <button type="button" class="qchip" data-val="500">+$500</button>
+      </div>
+      <div class="ga-preview" id="gaPreview"></div>
+    </div>
+    <div class="df"><button type="button" class="btn" data-close>Cancel</button><button type="submit" class="btn pri" id="gaSubmitBtn">Confirm</button></div>
+  </form>
+</dialog>
+
+<!-- Single amount dialog -->
+<dialog id="amountDialog" aria-labelledby="aTitle">
+  <form id="amountForm" novalidate>
+    <div class="dh"><h2 id="aTitle"></h2><button type="button" class="ib" data-close aria-label="Close">✕</button></div>
+    <div class="db">
+      <div class="field"><label for="aAmount" id="aLabel"></label><div class="money"><span>$</span><input class="inp" id="aAmount" name="amount" inputmode="decimal" autocomplete="off" placeholder="0.00" aria-describedby="ea-amount"></div><p class="err" id="ea-amount" data-err="amount"></p><p class="sub" id="aHint"></p></div>
+    </div>
+    <div class="df"><button type="button" class="btn" data-close>Cancel</button><button type="submit" class="btn pri">Save</button></div>
+  </form>
+</dialog>
+
+<!-- Delete confirmation -->
+<dialog id="confirmDialog" aria-labelledby="cTitle" aria-describedby="cMsg">
+  <div class="dh"><h2 id="cTitle">Delete transaction?</h2></div>
+  <div class="db"><p id="cMsg" class="sub" style="font-size:13px"></p></div>
+  <div class="df"><button type="button" class="btn" id="cCancel">Cancel</button><button type="button" class="btn danger" id="cOk">Delete</button></div>
+</dialog>
+
+<!-- Restore Backup Dialog -->
+<dialog id="restoreDialog" aria-labelledby="rTitle">
+  <form id="restoreForm" novalidate>
+    <div class="dh">
+      <h2 id="rTitle">Restore from JSON backup</h2>
+      <button type="button" class="ib" data-close aria-label="Close">✕</button>
+    </div>
+    <div class="db">
+      <p class="sub" style="line-height:1.45">Select a Dark Forest Finance JSON backup file to validate and preview before restoring. Existing data will remain untouched unless you confirm.</p>
+      <div class="field">
+        <label for="restoreFile">Backup file (.json)</label>
+        <input class="inp" type="file" id="restoreFile" accept=".json,application/json" aria-describedby="rError">
+      </div>
+      <div id="rError" class="restore-err" role="alert" hidden></div>
+      <div id="rPreview" class="restore-preview" hidden>
+        <div style="font-weight:var(--fw-semibold);color:var(--accent)">Backup Preview (Validated)</div>
+        <div class="restore-grid" id="rStats"></div>
+        <div id="rWarnings" class="restore-warn" hidden></div>
+        <div class="restore-replace-note">
+          <strong>Replace operation (no merge):</strong> Confirming will <strong>replace</strong> all current transactions, budgets, savings goals, contribution history, and settings in this browser. A pre-restore snapshot of your current data will be preserved in browser storage.
+        </div>
+      </div>
+    </div>
+    <div class="df">
+      <button type="button" class="btn" id="rCancel" data-close>Cancel</button>
+      <button type="submit" class="btn danger" id="rConfirm" disabled>Replace all data &amp; restore</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Recurring Schedule Dialog -->
+<dialog id="recurringDialog" aria-labelledby="recTitle">
+  <form id="recurringForm" novalidate>
+    <div class="dh">
+      <h2 id="recTitle">New recurring schedule</h2>
+      <button type="button" class="ib" data-close aria-label="Close">✕</button>
+    </div>
+    <div class="db">
+      <fieldset class="typeseg">
+        <legend style="position:absolute;left:-9999px">Type</legend>
+        <label><input type="radio" name="type" value="expense" checked><span>Expense</span></label>
+        <label><input type="radio" name="type" value="income"><span>Income</span></label>
+      </fieldset>
+      <div class="two">
+        <div class="field">
+          <label for="rfAmount">Amount</label>
+          <div class="money"><span>$</span><input class="inp" id="rfAmount" name="amount" inputmode="decimal" autocomplete="off" placeholder="0.00" aria-describedby="er-amount"></div>
+          <p class="err" id="er-amount"></p>
+        </div>
+        <div class="field">
+          <label for="rfFreq">Frequency</label>
+          <select class="inp" id="rfFreq" name="frequency" aria-describedby="er-frequency">
+            <option value="monthly">Monthly</option>
+            <option value="weekly">Weekly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+          <p class="err" id="er-frequency"></p>
+        </div>
+      </div>
+      <div class="field">
+        <label for="rfDesc">Description or merchant</label>
+        <input class="inp" id="rfDesc" name="description" maxlength="80" autocomplete="off" placeholder="e.g., Apartment Rent, Cloud Hosting, Salary" aria-describedby="er-description">
+        <p class="err" id="er-description"></p>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label for="rfCat">Category</label>
+          <select class="inp" id="rfCat" name="category" aria-describedby="er-category"></select>
+          <p class="err" id="er-category"></p>
+        </div>
+        <div class="field">
+          <label for="rfAcct">Account</label>
+          <select class="inp" id="rfAcct" name="account" aria-describedby="er-account"></select>
+          <p class="err" id="er-account"></p>
+        </div>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label for="rfStart">Start date</label>
+          <input class="inp" type="date" id="rfStart" name="startDate" min="1900-01-01" max="2100-12-31" aria-describedby="er-startDate">
+          <p class="err" id="er-startDate"></p>
+        </div>
+        <div class="field">
+          <label for="rfEnd">End date <span style="color:var(--muted-2)">(optional)</span></label>
+          <input class="inp" type="date" id="rfEnd" name="endDate" min="1900-01-01" max="2100-12-31" aria-describedby="er-endDate">
+          <p class="err" id="er-endDate"></p>
+        </div>
+      </div>
+      <div class="field">
+        <label for="rfNote">Note <span style="color:var(--muted-2)">(optional)</span></label>
+        <input class="inp" id="rfNote" name="note" maxlength="140" autocomplete="off" aria-describedby="er-note">
+        <p class="err" id="er-note"></p>
+      </div>
+      <p class="sub" style="line-height:1.45">
+        <strong>Schedule rules:</strong> Occurrences on or before today are posted automatically once per due date (never duplicated on refresh). Future occurrences appear in <em>Upcoming Scheduled</em> and are excluded from current budgets and balances until their date arrives. Month-end dates (e.g., 31st) clamp safely to shorter months without drifting.
+      </p>
+    </div>
+    <div class="df">
+      <button type="button" class="btn" data-close>Cancel</button>
+      <button type="submit" class="btn pri" id="recSaveBtn">Save schedule</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Settings, Categories, PWA & Sync Readiness Dialog -->
+<dialog id="settingsDialog" aria-labelledby="setTitle">
+  <div class="dh">
+    <h2 id="setTitle">Preferences, Currencies, Categories &amp; Sync</h2>
+    <button type="button" class="ib" data-close aria-label="Close">✕</button>
+  </div>
+  <div class="db">
+    <div class="settings-sec">
+      <h4>Reporting Currency &amp; Exchange Rates</h4>
+      <p class="sub">Changing the <strong>Dashboard Reporting Currency</strong> converts displayed totals, charts, budgets, and goals using the active exchange rate without altering stored transaction records.</p>
+      <div class="two">
+        <div class="field">
+          <label for="sCurrency">Dashboard reporting currency</label>
+          <select class="inp" id="sCurrency"></select>
+        </div>
+        <div class="field">
+          <label for="sDateFormat">Date format</label>
+          <select class="inp" id="sDateFormat"></select>
+        </div>
+      </div>
+      <div class="sync-box" id="fxStatusBox">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+          <div><strong>Exchange Rate Feed:</strong> <span id="fxSourceLabel" class="mono">Checking rates…</span></div>
+          <button type="button" class="btn sm dk" id="refreshFxBtn">↻ Refresh Live Rates</button>
+        </div>
+        <div id="fxRatesTable" class="mono" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
+      </div>
+    </div>
+
+    <div class="settings-sec">
+      <h4>Account Denominations</h4>
+      <p class="sub">Each account has its own explicit currency. Changing an account's denomination converts existing transactions in that account after showing a rate and balance preview.</p>
+      <div id="acctCurrenciesList" style="display:grid;gap:6px"></div>
+    </div>
+
+    <div class="settings-sec">
+      <h4>Custom Categories</h4>
+      <p class="sub">Add custom expense or income categories for transactions, budgets, and recurring schedules.</p>
+      <form id="catAddForm" class="qa-form" style="grid-template-columns:120px 1fr auto" novalidate>
+        <select class="inp" id="catAddType" aria-label="Category type">
+          <option value="expense">Expense</option>
+          <option value="income">Income</option>
+        </select>
+        <input class="inp" id="catAddName" maxlength="28" autocomplete="off" placeholder="New category name (e.g., Pets, Childcare)…" aria-label="New category name" aria-describedby="ecat-name">
+        <button type="submit" class="btn pri">+ Add</button>
+      </form>
+      <p class="err" id="ecat-name" role="alert"></p>
+      <div id="customCatsList" class="cat-pills"></div>
+    </div>
+
+    <div class="settings-sec">
+      <h4>Installable App (PWA) &amp; Offline Mode</h4>
+      <div class="sync-box" id="pwaStatusBox">
+        <div><strong>App Shell Status:</strong> <span id="swStateText" class="mono">Checking service worker…</span></div>
+        <div style="margin-top:4px">
+          • <strong>Chromium (Chrome / Edge / Brave):</strong> Click <em>↓ Install App</em> in the top bar or the address bar install icon.<br>
+          • <strong>Safari (iOS / iPadOS / macOS):</strong> Use <em>Share → Add to Home Screen</em> (or <em>File → Add to Dock</em> on macOS Sonoma+).<br>
+          • <strong>Firefox Desktop:</strong> Supports offline app-shell caching and local storage, but does not natively support standalone desktop PWA installation.
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-sec">
+      <h4>Cross-Device Synchronization Readiness</h4>
+      <div class="sync-box">
+        <div><strong>Current Mode:</strong> <span class="chip" style="color:var(--accent);border-color:var(--border-strong)">Local-First (Browser Storage v2)</span></div>
+        <div style="margin-top:6px">
+          All records use stable UUID-style identifiers, ISO timestamps, idempotent recurring occurrence keys (<code>recurringId + occurrenceDate</code>), and versioned schema envelopes—ready for optional end-to-end or row-level-secured cloud sync without data loss. No cloud backend is connected in this static deployment; use <strong>Backup JSON</strong> / <strong>Restore Backup</strong> to move data across devices today, or see <code>SYNC_ARCHITECTURE.md</code> for the full backend specification.
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="df">
+    <button type="button" class="btn pri" data-close>Done</button>
+  </div>
+</dialog>
+
+<!-- Account Denomination Conversion Confirmation Dialog -->
+<dialog id="acctCurrencyDialog" aria-labelledby="acTitle">
+  <form id="acctCurrencyForm" novalidate>
+    <div class="dh">
+      <h2 id="acTitle">Convert account denomination</h2>
+      <button type="button" class="ib" data-close aria-label="Close">✕</button>
+    </div>
+    <div class="db">
+      <p class="sub" style="line-height:1.45">
+        You are changing the native currency of <strong id="acAcctName" style="color:var(--text)"></strong>. Unlike changing the dashboard's reporting currency, this operation converts the transactions recorded in this account into the new denomination.
+      </p>
+      <div class="restore-preview" id="acPreviewBox"></div>
+      <div id="acError" class="restore-err" role="alert" hidden></div>
+      <div class="restore-replace-note">
+        <strong>Original records preserved:</strong> Each transaction's original amount and currency (<code>originalAmount</code> &amp; <code>originalCurrency</code>) are saved on the record so values are never converted twice and can be converted back without rounding drift.
+      </div>
+    </div>
+    <div class="df">
+      <button type="button" class="btn" id="acCancel" data-close>Cancel</button>
+      <button type="submit" class="btn pri" id="acConfirm">Confirm account conversion</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Application Information, Help, Privacy, Terms & Feedback Dialog -->
+<dialog id="infoDialog" aria-labelledby="infoTitle" style="width:min(580px,calc(100% - 32px))">
+  <div class="dh">
+    <h2 id="infoTitle">About Dark Forest Finance</h2>
+    <button type="button" class="ib" data-close aria-label="Close">✕</button>
+  </div>
+  <div class="db">
+    <div class="info-tabs" id="infoTabs" role="tablist">
+      <button type="button" role="tab" data-infotab="about" class="on">About</button>
+      <button type="button" role="tab" data-infotab="help">Help &amp; Docs</button>
+      <button type="button" role="tab" data-infotab="privacy">Privacy</button>
+      <button type="button" role="tab" data-infotab="terms">Terms</button>
+      <button type="button" role="tab" data-infotab="feedback">Feedback &amp; Data</button>
+    </div>
+    <div id="infoContent" class="sync-box" style="font-size:12.5px;line-height:1.55;color:var(--text)"></div>
+  </div>
+  <div class="df">
+    <button type="button" class="btn pri" data-close>Close</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="finance.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

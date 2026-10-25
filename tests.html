@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Finance Tests</title>
+<style>body{background:#080D0A;color:#EEF3EF;font:13px/1.5 "JetBrains Mono",monospace;padding:20px}.p{color:#35D07F}.f{color:#F06B5B}</style></head>
+<body><h1 id="sum">Running…</h1><div id="out"></div>
+<script src="finance.js"></script>
+<script>
+const F = Finance, results = [], pendingAsync = [];
+function test(name, fn) {
+  try {
+    const ret = fn();
+    if (ret && typeof ret.then === 'function') {
+      pendingAsync.push(ret.then(() => results.push([true, name]), e => results.push([false, name + ' — ' + e.message])));
+    } else {
+      results.push([true, name]);
+    }
+  } catch (e) {
+    results.push([false, name + ' — ' + e.message]);
+  }
+}
+function eq(a, b, m = '') { const x = JSON.stringify(a), y = JSON.stringify(b); if (x !== y) throw new Error(`${m} expected ${y}, got ${x}`); }
+function memStore(init = {}) { const d = { ...init }; return { d, getItem: k => (k in d ? d[k] : null), setItem: (k, v) => { d[k] = String(v); }, keys: () => Object.keys(d) }; }
+const tx = (type, amt, date, extra = {}) => ({ id: F.createId(), type, amount: amt, description: 'x', category: type === 'income' ? 'Salary' : 'Groceries', date, account: 'Checking', note: '', ...extra });
+const TODAY = '2026-10-24';
+
+/* money & dates */
+test('toCents parses decimals precisely', () => { eq(F.toCents('0.29'), 29); eq(F.toCents('1,234.56'), 123456); eq(F.toCents('$10'), 1000); eq(F.toCents('.5'), 50); });
+test('toCents rejects bad input', () => { for (const v of ['', 'abc', '1.234', '-5', '1e3', '12..3']) if (!Number.isNaN(F.toCents(v))) throw new Error(v); });
+test('isValidDate', () => { eq(F.isValidDate('2026-02-29'), false); eq(F.isValidDate('2024-02-29'), true); eq(F.isValidDate('2026-13-01'), false); eq(F.isValidDate('26-1-1'), false); eq(F.isValidDate('3000-01-01'), false); });
+test('periodRange 1M / 6M / 12M', () => {
+  eq(F.periodRange(1, TODAY), { start: '2026-10-01', end: TODAY });
+  eq(F.periodRange(6, TODAY), { start: '2026-05-01', end: TODAY });
+  eq(F.periodRange(12, TODAY), { start: '2025-11-01', end: TODAY });
+});
+test('previousRange is contiguous', () => { eq(F.previousRange(3, TODAY), { start: '2026-05-01', end: '2026-07-31' }); eq(F.previousRange(1, '2026-03-15'), { start: '2026-02-01', end: '2026-02-28' }); });
+
+/* validation */
+const good = { type: 'expense', amount: '12.50', description: ' Cafe ', category: 'Dining out', date: '2026-10-01', account: 'Cash', note: '' };
+test('validate accepts good input and trims', () => { const r = F.validate(good); eq(r.ok, true); eq(r.value.amount, 1250); eq(r.value.description, 'Cafe'); });
+test('validate rejects zero / negative / non-numeric amounts', () => { for (const a of ['0', '0.00', '-3', 'ten', '']) { const r = F.validate({ ...good, amount: a }); if (r.ok || !r.errors.amount) throw new Error(a); } });
+test('validate rejects empty description', () => { eq(!!F.validate({ ...good, description: '   ' }).errors.description, true); });
+test('validate rejects invalid date', () => { for (const d of ['', '2026-02-30', 'tomorrow']) eq(!!F.validate({ ...good, date: d }).errors.date, true, d); });
+test('validate rejects category of wrong type', () => { eq(!!F.validate({ ...good, type: 'income', category: 'Groceries' }).errors.category, true); });
+test('validate rejects unknown type', () => { eq(!!F.validate({ ...good, type: 'transfer' }).errors.type, true); });
+
+/* calculations */
+test('summarize: known case', () => {
+  const t = [tx('income', 500000, '2026-10-01'), tx('expense', 125050, '2026-10-05'), tx('expense', 99, '2026-09-30')];
+  eq(F.summarize(t, F.periodRange(1, TODAY)), { income: 500000, expense: 125050, net: 374950, savingsRate: 74.99 });
+});
+test('summarize: zero income → savingsRate null', () => { eq(F.summarize([tx('expense', 1000, '2026-10-02')], F.periodRange(1, TODAY)).savingsRate, null); eq(F.summarize([], F.periodRange(1, TODAY)), { income: 0, expense: 0, net: 0, savingsRate: null }); });
+test('summarize: negative net cash flow', () => { const s = F.summarize([tx('income', 100000, '2026-10-01'), tx('expense', 150000, '2026-10-02')], F.periodRange(1, TODAY)); eq(s.net, -50000); eq(s.savingsRate, -50); });
+test('future transactions excluded from period totals and balance', () => {
+  const t = [tx('income', 1000, TODAY), tx('expense', 700, '2026-10-25'), tx('expense', 300, '2026-11-02')];
+  eq(F.summarize(t, F.periodRange(1, TODAY)).expense, 0); eq(F.netBalance(t, TODAY), 1000);
+});
+test('netBalance and balanceByAccount agree', () => {
+  const t = [tx('income', 1000, '2026-01-01'), tx('expense', 250, '2026-02-01', { account: 'Cash' }), tx('expense', 100, '2026-03-01', { account: 'Visa •4021' })];
+  eq(F.netBalance(t, TODAY), 650); const b = F.balanceByAccount(t, TODAY); eq(b.Checking + b.Cash + b['Visa •4021'] + b.Savings, 650); eq(b.Cash, -250);
+});
+test('monthlySeries totals equal period summary', () => {
+  const t = F.seed(TODAY), s = F.monthlySeries(t, TODAY, 6), p = F.summarize(t, F.periodRange(6, TODAY));
+  eq(s.reduce((a, m) => a + m.income, 0), p.income); eq(s.reduce((a, m) => a + m.expense, 0), p.expense); eq(s.length, 6); eq(s[5].month, '2026-10');
+});
+test('byCategory sums to expense total', () => { const t = F.seed(TODAY), r = F.periodRange(3, TODAY); eq(F.byCategory(t, r).reduce((a, c) => a + c.amount, 0), F.summarize(t, r).expense); });
+test('balanceHistory last point = netBalance today', () => { const t = F.seed(TODAY); eq(F.balanceHistory(t, TODAY, 10).at(-1), F.netBalance(t, TODAY)); });
+
+/* filtering & sorting */
+test('filterTransactions by query / type / category', () => {
+  const t = [tx('income', 1, TODAY, { description: 'Acme payroll' }), tx('expense', 2, TODAY, { description: 'Whole Foods' }), tx('expense', 3, TODAY, { description: 'Shell', category: 'Transport' })];
+  eq(F.filterTransactions(t, { query: 'whole' }).length, 1); eq(F.filterTransactions(t, { type: 'expense' }).length, 2);
+  eq(F.filterTransactions(t, { category: 'Transport' }).length, 1); eq(F.filterTransactions(t, { query: 'zzz' }).length, 0);
+});
+test('sortTransactions by signed amount', () => { const t = [tx('expense', 500, TODAY), tx('income', 100, TODAY), tx('expense', 50, TODAY)]; eq(F.sortTransactions(t, 'amount', -1).map(F.signed), [100, -50, -500]); });
+
+/* storage */
+test('empty storage → seeds and saves', () => { const s = memStore(); const r = F.load(s, () => [tx('income', 1, TODAY)]); eq(r.status, 'seeded'); eq(JSON.parse(s.d[F.STORAGE_KEY]).version, 2); eq(r.budgets.length, 5); eq(r.goals.length, 4); });
+test('existing data is never replaced by seed', () => {
+  const s = memStore(); F.save(s, { transactions: [tx('expense', 4200, TODAY, { id: 'mine' })] });
+  const r = F.load(s, () => { throw new Error('seed called'); }); eq(r.status, 'ok'); eq(r.transactions.map(t => t.id), ['mine']);
+});
+test('empty saved list stays empty (user deleted everything)', () => { const s = memStore(); F.save(s, { transactions: [], goals: [] }); const r = F.load(s, () => [tx('income', 1, TODAY)]); eq(r.transactions.length, 0); eq(r.goals.length, 0); });
+test('malformed JSON → empty + backup, no crash', () => { const s = memStore({ [F.STORAGE_KEY]: '{oops' }); const r = F.load(s, () => []); eq(r.status, 'corrupt'); eq(s.keys().some(k => k.includes('.backup.')), true); });
+test('newer schema → incompatible + backup', () => { const s = memStore({ [F.STORAGE_KEY]: JSON.stringify({ version: 99, transactions: [] }) }); eq(F.load(s, () => []).status, 'incompatible'); });
+test('invalid records skipped, valid kept', () => {
+  const s = memStore({ [F.STORAGE_KEY]: JSON.stringify({ version: 2, transactions: [tx('income', 100, TODAY), { type: 'expense', amount: -5 }, null, tx('expense', 1.5, TODAY)], budgets: [], goals: [] }) });
+  const r = F.load(s, () => []); eq(r.status, 'partial'); eq(r.transactions.length, 1); eq(r.dropped, 3);
+});
+test('legacy bare array migrates', () => { const s = memStore({ [F.STORAGE_KEY]: JSON.stringify([tx('income', 100, TODAY)]) }); eq(F.load(s, () => []).transactions.length, 1); });
+test('storage throwing on read → unavailable, no crash', () => { const r = F.load({ getItem() { throw new Error('denied'); }, setItem() {} }, () => []); eq(r.status, 'unavailable'); });
+test('save returns false when storage is full', () => { eq(F.save({ setItem() { throw new Error('quota'); } }, {}), false); });
+
+
+/* phase 2: budgets & goals */
+test('parseAmount', () => { eq(F.parseAmount('12.5').cents, 1250); eq(!!F.parseAmount('0').error, true); eq(F.parseAmount('0', { allowZero: true }).cents, 0); eq(!!F.parseAmount('-1', { allowZero: true }).error, true); eq(!!F.parseAmount('').error, true); });
+test('validateBudget: good, zero, bad category, duplicate, own category on edit', () => {
+  const list = [{ id: 'b1', category: 'Groceries', limit: 60000 }];
+  eq(F.validateBudget({ category: 'Travel', limit: '300' }, list).value, { category: 'Travel', limit: 30000 });
+  eq(!!F.validateBudget({ category: 'Travel', limit: '0' }, list).errors.limit, true);
+  eq(!!F.validateBudget({ category: 'Salary', limit: '10' }, list).errors.category, true);
+  eq(!!F.validateBudget({ category: 'Groceries', limit: '10' }, list).errors.category, true);
+  eq(F.validateBudget({ category: 'Groceries', limit: '10' }, list, 'b1').ok, true);
+});
+test('validateGoal: good, empty saved = 0, errors', () => {
+  eq(F.validateGoal({ name: ' Car ', target: '5000', saved: '', deadline: '', tag: 'XP' }).value, { name: 'Car', target: 500000, saved: 0, deadline: '', tag: 'XP' });
+  const e = F.validateGoal({ name: '', target: '0', saved: '-5', deadline: '2026-02-30' }).errors;
+  eq(Object.keys(e).sort(), ['deadline', 'name', 'saved', 'target']);
+  eq(F.validateGoal({ name: 'x', target: '1', tag: 'NOPE' }).value.tag, 'HP');
+});
+test('budgetStatus: under, exactly at, over, no spending, current month only', () => {
+  const t = [tx('expense', 30000, '2026-10-02'), tx('expense', 25000, '2026-10-03', { category: 'Dining out' }), tx('expense', 9000, '2026-10-04', { category: 'Transport' }),
+    tx('expense', 1000, '2026-10-05', { category: 'Transport' }), tx('expense', 99999, '2026-09-30'), tx('expense', 5000, '2026-10-30')];
+  const b = [{ id: '1', category: 'Transport', limit: 9000 }, { id: '2', category: 'Groceries', limit: 60000 }, { id: '3', category: 'Dining out', limit: 25000 }, { id: '4', category: 'Travel', limit: 10000 }];
+  const s = Object.fromEntries(F.budgetStatus(t, b, TODAY).map(x => [x.category, x]));
+  eq([s.Groceries.spent, s.Groceries.over, s.Groceries.pct], [30000, false, 50]);
+  eq([s['Dining out'].over, s['Dining out'].remaining], [false, 0]);
+  eq([s.Transport.spent, s.Transport.over, s.Transport.remaining], [10000, true, -1000]);
+  eq([s.Travel.spent, s.Travel.pct], [0, 0]);
+  eq(F.budgetStatus(t, b, TODAY).map(x => x.category), ['Groceries', 'Dining out', 'Transport', 'Travel']);
+  eq(s.Groceries.status, 'ok');
+  eq(s.Transport.status, 'danger');
+  eq(s['Dining out'].status, 'warning'); // 100% spent: warning (reached limit, not over)
+});
+test('budgetStatus: approaching limit warning (80-100%)', () => {
+  const t = [tx('expense', 8500, '2026-10-02', { category: 'Utilities' })];
+  const b = [{ id: 'u1', category: 'Utilities', limit: 10000 }];
+  const s = F.budgetStatus(t, b, TODAY)[0];
+  eq(s.warning, true);
+  eq(s.status, 'warning');
+  eq(s.over, false);
+});
+test('validateGoalAction: deposit, withdraw, over-withdraw', () => {
+  eq(F.validateGoalAction({ type: 'deposit', amount: '50.00' }, 10000).value, { type: 'deposit', amount: 5000 });
+  eq(F.validateGoalAction({ type: 'withdraw', amount: '30.00' }, 10000).value, { type: 'withdraw', amount: 3000 });
+  eq(!!F.validateGoalAction({ type: 'withdraw', amount: '150.00' }, 10000).errors.amount, true);
+  eq(!!F.validateGoalAction({ type: 'deposit', amount: '0' }, 10000).errors.amount, true);
+});
+test('suggestedContribution calculates correct monthly savings', () => {
+  eq(F.suggestedContribution({ target: 120000, saved: 30000, deadline: '2026-12-15' }, TODAY), 30000);
+  eq(F.suggestedContribution({ target: 120000, saved: 30000, deadline: '' }, TODAY, 12), 7500);
+  eq(F.suggestedContribution({ target: 50000, saved: 50000, deadline: '2026-12-15' }, TODAY), 0);
+});
+test('monthlyBudgetStatus uses all expenses this month', () => {
+  const m = F.monthlyBudgetStatus([tx('expense', 50000, '2026-10-01', { category: 'Health' }), tx('income', 900000, '2026-10-01')], { monthlyBudget: 40000 }, TODAY);
+  eq([m.spent, m.over, m.remaining], [50000, true, -10000]);
+});
+test('goalProgress: in progress, done, overdue, no deadline', () => {
+  eq(F.goalProgress({ target: 120000, saved: 30000, deadline: '2026-12-15' }, TODAY), { remaining: 90000, pct: 25, done: false, overdue: false, monthsLeft: 3, perMonth: 30000 });
+  eq(F.goalProgress({ target: 1000, saved: 1500, deadline: '2026-01-01' }, TODAY), { remaining: 0, pct: 100, done: true, overdue: false, monthsLeft: null, perMonth: null });
+  eq(F.goalProgress({ target: 1000, saved: 10, deadline: '2026-10-23' }, TODAY).overdue, true);
+  eq(F.goalProgress({ target: 1000, saved: 10, deadline: '' }, TODAY).perMonth, null);
+  eq(F.goalProgress({ target: 1000, saved: 0, deadline: TODAY }, TODAY).perMonth, 1000);
+});
+test('v1 → v2 upgrade keeps transactions, adds defaults, backs up, saves v2', () => {
+  const s = memStore({ [F.STORAGE_KEY]: JSON.stringify({ version: 1, transactions: [tx('income', 100, TODAY, { id: 'keep' })] }) });
+  const r = F.load(s, () => { throw new Error('seed called'); }, TODAY);
+  eq(r.status, 'upgraded'); eq(r.transactions.map(t => t.id), ['keep']); eq(r.budgets.length, 5); eq(r.goals.length, 4); eq(r.settings.monthlyBudget, 420000);
+  eq(s.keys().some(k => k.includes('.backup.')), true); eq(JSON.parse(s.d[F.STORAGE_KEY]).version, 2);
+  eq(F.load(s, () => [], TODAY).status, 'ok');
+});
+test('v2 round trip keeps budgets, goals, settings', () => {
+  const s = memStore(), data = { transactions: [], budgets: [{ id: 'b', category: 'Travel', limit: 1234 }], goals: [{ id: 'g', name: 'Bike', target: 5000, saved: 0, deadline: '', tag: 'MP', createdAt: TODAY }], settings: { monthlyBudget: 99900 } };
+  F.save(s, data); const r = F.load(s, () => [], TODAY);
+  eq([r.budgets, r.goals, r.settings, r.status], [data.budgets, data.goals, data.settings, 'ok']);
+});
+test('v2 bad budgets/goals/settings are dropped or defaulted', () => {
+  const s = memStore({ [F.STORAGE_KEY]: JSON.stringify({ version: 2, transactions: [],
+    budgets: [{ id: 'a', category: 'Travel', limit: 100 }, { id: 'b', category: 'Travel', limit: 200 }, { category: 'Salary', limit: 1 }, { category: 'Health', limit: 0 }],
+    goals: [{ id: 'g', name: 'ok', target: 100, saved: 0 }, { name: '', target: 100 }, { name: 'neg', target: 100, saved: -1 }, 'junk'],
+    settings: { monthlyBudget: -5 } }) });
+  const r = F.load(s, () => [], TODAY);
+  eq(r.status, 'partial'); eq(r.budgets.map(b => b.id), ['a']); eq(r.goals.map(g => g.id), ['g']); eq(r.dropped, 6); eq(r.settings.monthlyBudget, 420000);
+});
+
+/* seed */
+test('seed is deterministic, valid, and has one future item', () => {
+  const a = F.seed(TODAY), b = F.seed(TODAY);
+  eq(a.map(t => [t.date, t.amount]), b.map(t => [t.date, t.amount]));
+  eq(a.every(t => F.normalize(t)), true); eq(a.filter(t => t.date > TODAY).length, 1);
+});
+
+/* phase 5: reliability, date boundaries, precision, CSV export, backup & restore */
+test('floating-point precision: 0.1 + 0.2 and tricky decimals convert to exact cents', () => {
+  eq(F.toCents('0.10') + F.toCents('0.20'), 30);
+  eq(F.toCents('19.99'), 1999);
+  eq(F.toCents('999999.99'), 99999999);
+  eq(F.toCents(19.99), 1999);
+});
+test('date boundaries across months and years (Dec/Jan and leap year Feb)', () => {
+  const jan = '2026-01-15';
+  eq(F.periodRange(2, jan), { start: '2025-12-01', end: jan });
+  eq(F.previousRange(1, jan), { start: '2025-12-01', end: '2025-12-31' });
+  eq(F.monthEnd('2024-02-10'), '2024-02-29');
+  eq(F.monthEnd('2026-02-10'), '2026-02-28');
+  const txs = [tx('income', 10000, '2025-12-31'), tx('expense', 4000, '2026-01-01')];
+  eq(F.summarize(txs, F.periodRange(1, jan)), { income: 0, expense: 4000, net: -4000, savingsRate: null });
+  eq(F.summarize(txs, F.periodRange(2, jan)), { income: 10000, expense: 4000, net: 6000, savingsRate: 60 });
+});
+test('calculations ignore invalid financial values and handle empty/missing inputs safely', () => {
+  const dirty = [
+    tx('income', 5000, TODAY),
+    null,
+    undefined,
+    { type: 'income', amount: NaN, date: TODAY },
+    { type: 'expense', amount: -200, date: TODAY },
+    { type: 'transfer', amount: 1000, date: TODAY },
+    { type: 'expense', amount: 12.34, date: TODAY },
+    { type: 'expense', amount: 1000, date: 'bad-date' },
+  ];
+  eq(F.summarize(dirty, F.periodRange(1, TODAY)), { income: 5000, expense: 0, net: 5000, savingsRate: 100 });
+  eq(F.netBalance(dirty, TODAY), 5000);
+  eq(F.summarize(null, F.periodRange(1, TODAY)), { income: 0, expense: 0, net: 0, savingsRate: null });
+  eq(F.netBalance(null, TODAY), 0);
+  eq(F.byCategory(null, F.periodRange(1, TODAY)), []);
+  eq(F.budgetStatus(dirty, null, TODAY), []);
+  eq(F.goalProgress(null, TODAY).pct, 100);
+});
+test('dashboard summaries, monthlySeries, byCategory, and account balances are mutually consistent', () => {
+  const t = F.seed(TODAY);
+  const r12 = F.periodRange(12, TODAY);
+  const sum12 = F.summarize(t, r12);
+  const series12 = F.monthlySeries(t, TODAY, 12);
+  const catExp = F.byCategory(t, r12, 'expense').reduce((a, c) => a + c.amount, 0);
+  const catInc = F.byCategory(t, r12, 'income').reduce((a, c) => a + c.amount, 0);
+  const accts = Object.values(F.balanceByAccount(t, TODAY)).reduce((a, v) => a + v, 0);
+  eq(series12.reduce((a, m) => a + m.income, 0), sum12.income);
+  eq(series12.reduce((a, m) => a + m.expense, 0), sum12.expense);
+  eq(series12.reduce((a, m) => a + m.net, 0), sum12.net);
+  eq(catExp, sum12.expense);
+  eq(catInc, sum12.income);
+  eq(accts, F.netBalance(t, TODAY));
+});
+test('CSV export: headers, RFC 4180 escaping, and formula injection protection', () => {
+  eq(F.sanitizeCSVCell('=SUM(A1:A2)'), "'=SUM(A1:A2)");
+  eq(F.sanitizeCSVCell('+12345'), "'+12345");
+  eq(F.sanitizeCSVCell('-cmd|calc'), "'-cmd|calc");
+  eq(F.sanitizeCSVCell('@import'), "'@import");
+  eq(F.sanitizeCSVCell('  =1+1'), "'  =1+1");
+  eq(F.sanitizeCSVCell('Coffee, "Dark" Roast\nSpecial'), '"Coffee, ""Dark"" Roast\nSpecial"');
+  eq(F.sanitizeCSVCell('=HYPERLINK("http://x","y")'), '"\'=HYPERLINK(""http://x"",""y"")"');
+
+  const sample = [
+    tx('expense', 1250, '2026-10-05', { category: 'Dining out', description: 'Cafe, "Best"', account: 'Cash', note: '=1+1' }),
+    tx('income', 300000, '2026-10-06', { category: 'Salary', description: 'Acme Corp', account: 'Checking', note: '' }),
+  ];
+  const csv = F.toCSV(sample);
+  const rows = csv.split('\r\n');
+  eq(rows[0], 'Date,Type,Category,Description,Amount,Account,Note');
+  eq(rows[1], '2026-10-06,income,Salary,Acme Corp,3000.00,Checking,');
+  eq(rows[2], '2026-10-05,expense,Dining out,"Cafe, ""Best""",12.50,Cash,\'=1+1');
+});
+test('JSON backup: createBackup and validateBackup round-trip with contributions', () => {
+  const data = {
+    transactions: [tx('income', 200000, TODAY, { id: 't1' }), tx('expense', 50000, TODAY, { id: 't2' })],
+    budgets: [{ id: 'b1', category: 'Groceries', limit: 60000 }],
+    goals: [{ id: 'g1', name: 'Emergency', target: 100000, saved: 25000, deadline: '2026-12-31', tag: 'HP', createdAt: TODAY }],
+    contributions: [{ id: 'c1', goalId: 'g1', goalName: 'Emergency', type: 'deposit', amount: 25000, date: TODAY }],
+    settings: { monthlyBudget: 350000 },
+  };
+  const backup = F.createBackup(data, '2026-10-24T12:00:00.000Z');
+  eq(backup.version, 2);
+  eq(backup.app, 'dark-forest-finance');
+  eq(backup.exportedAt, '2026-10-24T12:00:00.000Z');
+  const v = F.validateBackup(JSON.stringify(backup), TODAY);
+  eq(v.ok, true);
+  eq(v.preview.transactionCount, 2);
+  eq(v.preview.budgetCount, 1);
+  eq(v.preview.goalCount, 1);
+  eq(v.preview.contributionCount, 1);
+  eq(v.preview.netBalance, 150000);
+  eq(v.preview.monthlyBudget, 350000);
+});
+test('validateBackup rejects malformed, incomplete, incompatible, and invalid backups', () => {
+  eq(F.validateBackup('', TODAY).status, 'empty');
+  eq(F.validateBackup('{bad json', TODAY).status, 'corrupt');
+  eq(F.validateBackup('[]', TODAY).status, 'invalid');
+  eq(F.validateBackup(JSON.stringify({ app: 'other-app', version: 2, transactions: [] }), TODAY).status, 'incompatible');
+  eq(F.validateBackup(JSON.stringify({ transactions: [] }), TODAY).status, 'incomplete');
+  eq(F.validateBackup(JSON.stringify({ version: 99, transactions: [] }), TODAY).status, 'incompatible');
+  eq(F.validateBackup(JSON.stringify({ version: 2 }), TODAY).status, 'incomplete');
+  // Malformed transaction inside backup fails validation
+  const badTxBackup = JSON.stringify({ version: 2, transactions: [{ type: 'expense', amount: -500, date: TODAY }] });
+  const rBad = F.validateBackup(badTxBackup, TODAY);
+  eq(rBad.ok, false);
+  eq(rBad.status, 'invalid');
+});
+test('restoreBackup is atomic: preserves existing data on invalid backup or quota error, and backs up before replacing', () => {
+  const existingTx = tx('income', 99900, TODAY, { id: 'existing-1' });
+  const s = memStore();
+  F.save(s, { transactions: [existingTx], budgets: [], goals: [], contributions: [], settings: { monthlyBudget: 400000 } });
+
+  // 1. Invalid restore leaves existing data untouched
+  const badRes = F.restoreBackup(s, '{corrupt', TODAY);
+  eq(badRes.ok, false);
+  eq(F.load(s, () => [], TODAY).transactions.map(t => t.id), ['existing-1']);
+
+  // 2. Quota failure during restore rolls back / preserves existing data
+  const validBackup = JSON.stringify(F.createBackup({
+    transactions: [tx('expense', 1200, TODAY, { id: 'restored-1' })],
+    budgets: [{ id: 'b1', category: 'Groceries', limit: 50000 }],
+    goals: [],
+    contributions: [],
+    settings: { monthlyBudget: 300000 },
+  }));
+  const quotaStore = {
+    getItem: k => s.getItem(k),
+    setItem: (k, v) => { if (k === F.STORAGE_KEY) throw new Error('QuotaExceededError'); s.setItem(k, v); },
+  };
+  const quotaRes = F.restoreBackup(quotaStore, validBackup, TODAY);
+  eq(quotaRes.ok, false);
+  eq(quotaRes.status, 'quota');
+  eq(F.load(s, () => [], TODAY).transactions.map(t => t.id), ['existing-1']);
+
+  // 3. Successful restore replaces data and creates a safety backup of previous state
+  const okRes = F.restoreBackup(s, validBackup, TODAY);
+  eq(okRes.ok, true);
+  eq(okRes.restored, true);
+  const loaded = F.load(s, () => [], TODAY);
+  eq(loaded.transactions.map(t => t.id), ['restored-1']);
+  eq(loaded.settings.monthlyBudget, 300000);
+  eq(s.keys().some(k => k.includes('.backup.')), true);
+});
+test('occurrenceDate: month-end clamping and leap-year handling without drift', () => {
+  // Monthly anchored on Jan 31 clamps to Feb 28 (or 29 in leap year) and returns to 31st in Mar and 30th in Apr
+  eq(F.occurrenceDate('2026-01-31', 'monthly', 0), '2026-01-31');
+  eq(F.occurrenceDate('2026-01-31', 'monthly', 1), '2026-02-28');
+  eq(F.occurrenceDate('2026-01-31', 'monthly', 2), '2026-03-31');
+  eq(F.occurrenceDate('2026-01-31', 'monthly', 3), '2026-04-30');
+  eq(F.occurrenceDate('2026-01-31', 'monthly', 4), '2026-05-31');
+  // Leap year 2024 monthly from Jan 31 -> Feb 29 -> Mar 31
+  eq(F.occurrenceDate('2024-01-31', 'monthly', 1), '2024-02-29');
+  eq(F.occurrenceDate('2024-01-31', 'monthly', 2), '2024-03-31');
+  // Yearly anchored on Feb 29 clamps to Feb 28 in non-leap years and returns to Feb 29 in next leap year
+  eq(F.occurrenceDate('2024-02-29', 'yearly', 0), '2024-02-29');
+  eq(F.occurrenceDate('2024-02-29', 'yearly', 1), '2025-02-28');
+  eq(F.occurrenceDate('2024-02-29', 'yearly', 2), '2026-02-28');
+  eq(F.occurrenceDate('2024-02-29', 'yearly', 4), '2028-02-29');
+  // Weekly steps
+  eq(F.occurrenceDate('2026-04-01', 'weekly', 0), '2026-04-01');
+  eq(F.occurrenceDate('2026-04-01', 'weekly', 2), '2026-04-15');
+});
+test('materializeRecurring: generates due occurrences once, prevents duplicates on refresh, respects pause and endDate', () => {
+  const rule = {
+    id: 'r_rent',
+    type: 'expense',
+    amount: 185000,
+    description: 'Apartment Rent',
+    category: 'Housing',
+    account: 'Checking',
+    frequency: 'monthly',
+    startDate: '2026-01-31',
+    endDate: '2026-03-31',
+    paused: false,
+    lastGeneratedDate: null,
+    note: '',
+  };
+  // Materialize as of 2026-04-10: should generate Jan 31, Feb 28, Mar 31 (3 occurrences, stopped by endDate)
+  const m1 = F.materializeRecurring([], [rule], '2026-04-10');
+  eq(m1.added.length, 3);
+  eq(m1.transactions.map(t => t.date), ['2026-01-31', '2026-02-28', '2026-03-31']);
+  eq(m1.recurring[0].lastGeneratedDate, '2026-03-31');
+
+  // Re-running materializeRecurring (simulating page refresh) produces zero duplicates
+  const m2 = F.materializeRecurring(m1.transactions, m1.recurring, '2026-04-10');
+  eq(m2.added.length, 0);
+  eq(m2.transactions.length, 3);
+
+  // Even if lastGeneratedDate were reset to null, existing transactions with recurringId + occurrenceDate prevent duplicates
+  const resetRule = { ...m1.recurring[0], lastGeneratedDate: null };
+  const m3 = F.materializeRecurring(m1.transactions, [resetRule], '2026-04-10');
+  eq(m3.added.length, 0);
+  eq(m3.transactions.length, 3);
+
+  // Paused schedule does not materialize
+  const pausedRule = { ...rule, id: 'r_paused', paused: true, endDate: null };
+  const m4 = F.materializeRecurring([], [pausedRule], '2026-04-10');
+  eq(m4.added.length, 0);
+});
+test('upcomingOccurrences and nextOccurrence: future scheduled items are excluded from current balances and budgets', () => {
+  const rules = [
+    {
+      id: 'r_sub',
+      type: 'expense',
+      amount: 2000,
+      description: 'Cloud Backup',
+      category: 'Subscriptions',
+      account: 'Visa •4021',
+      frequency: 'monthly',
+      startDate: '2026-03-15',
+      endDate: null,
+      paused: false,
+      lastGeneratedDate: null,
+      note: '',
+    },
+  ];
+  const mat = F.materializeRecurring([], rules, '2026-04-10');
+  // Only 2026-03-15 is <= 2026-04-10
+  eq(mat.transactions.map(t => t.date), ['2026-03-15']);
+  // Next occurrence after 2026-04-10 is 2026-04-15
+  eq(F.nextOccurrence(mat.recurring[0], '2026-04-10'), '2026-04-15');
+  const upcoming = F.upcomingOccurrences(mat.recurring, '2026-04-10', 60);
+  eq(upcoming.map(u => u.date), ['2026-04-15', '2026-05-15']);
+  // Upcoming April 15 occurrence has NOT been posted yet, so April budget spent is 0
+  const aprBudget = F.budgetStatus(mat.transactions, [{ id: 'b1', category: 'Subscriptions', limit: 5000 }], '2026-04-10');
+  eq(aprBudget[0].spent, 0);
+  eq(F.netBalance(mat.transactions, '2026-04-10'), -2000);
+});
+test('custom categories, currency formatting, and date formatting', () => {
+  const settings = {
+    monthlyBudget: 420000,
+    currency: 'EUR',
+    dateFormat: 'iso',
+    customCategories: { income: ['Dividends'], expense: ['Pets', 'Childcare'] },
+  };
+  eq(F.allCategories('expense', settings).includes('Pets'), true);
+  eq(F.allCategories('income', settings).includes('Dividends'), true);
+  // Duplicate or built-in category rejected
+  eq(F.validateCategoryName('Groceries', 'expense', settings).ok, false);
+  eq(F.validateCategoryName('pets', 'expense', settings).ok, false);
+  eq(F.validateCategoryName('Home Office', 'expense', settings), { ok: true, value: 'Home Office' });
+
+  // Custom category accepted in transaction and budget validation
+  const vTx = F.validate({ type: 'expense', amount: '45.00', description: 'Vet visit', category: 'Pets', account: 'Checking', date: TODAY, note: '' }, settings);
+  eq(vTx.ok, true);
+  const vBud = F.validateBudget({ category: 'Pets', limit: '200' }, [], null, settings);
+  eq(vBud.ok, true);
+
+  // Currency formatting (including 0-decimal JPY/KZT)
+  eq(F.formatCurrency(12345, 'USD'), '$123.45');
+  eq(F.formatCurrency(-12345, 'EUR'), '−€123.45');
+  eq(F.formatCurrency(150000, 'JPY'), '¥1,500');
+  eq(F.formatCurrency(250000, 'KZT'), '₸2,500');
+
+  // Date formatting
+  eq(F.formatDate('2026-04-05', 'iso', '2026-04-10'), '2026-04-05');
+  eq(F.formatDate('2026-04-05', 'dmy', '2026-04-10'), '05/04/2026');
+  eq(F.formatDate('2026-04-05', 'mdy', '2026-04-10'), '04/05/2026');
+});
+test('storage load & backup round-trip preserves recurring schedules and extended settings', () => {
+  const s = memStore();
+  const payload = {
+    transactions: [tx('income', 100000, '2026-04-01', { id: 't1' })],
+    budgets: [],
+    goals: [],
+    contributions: [],
+    recurring: [{
+      id: 'r1', type: 'expense', amount: 5000, description: 'Gym', category: 'Health',
+      account: 'Checking', frequency: 'monthly', startDate: '2026-04-01', endDate: null, paused: false, lastGeneratedDate: null, note: '',
+    }],
+    settings: { monthlyBudget: 400000, currency: 'GBP', dateFormat: 'dmy', customCategories: { income: [], expense: ['Pets'] }, recentCategories: ['Health', 'Pets'] },
+  };
+  F.save(s, payload);
+  // Loading on 2026-04-10 materializes the due 2026-04-01 Gym occurrence automatically
+  const loaded = F.load(s, () => [], '2026-04-10');
+  eq(loaded.status, 'ok');
+  eq(loaded.recurring.length, 1);
+  eq(loaded.transactions.length, 2);
+  eq(loaded.settings.currency, 'GBP');
+  eq(loaded.settings.customCategories.expense, ['Pets']);
+});
+
+test('multi-currency conversion: 50,000 USD to JPY and KRW uses real FX rates (never symbol-only swap)', () => {
+  const fx = {
+    base: 'USD',
+    date: '2026-04-10',
+    fetchedAt: '2026-04-10T12:00:00.000Z',
+    source: 'live',
+    rates: { USD: 1, EUR: 0.92, GBP: 0.79, JPY: 150, KRW: 1400, CAD: 1.36, AUD: 1.52, KZT: 450 },
+  };
+  // 50,000.00 USD = 5,000,000 internal centi-units
+  const fiftyThousandUSD = F.toCents(50000);
+  eq(fiftyThousandUSD, 5000000);
+  eq(F.formatCurrency(fiftyThousandUSD, 'USD'), '$50,000.00');
+
+  // Convert 50,000 USD -> JPY at 1 USD = 150 JPY => 7,500,000 JPY (750,000,000 internal units)
+  const inJPY = F.convertAmount(fiftyThousandUSD, 'USD', 'JPY', fx);
+  eq(inJPY, 750000000);
+  eq(F.formatCurrency(inJPY, 'JPY'), '¥7,500,000');
+
+  // Convert 50,000 USD -> KRW at 1 USD = 1400 KRW => 70,000,000 KRW (7,000,000,000 internal units)
+  const inKRW = F.convertAmount(fiftyThousandUSD, 'USD', 'KRW', fx);
+  eq(inKRW, 7000000000);
+  eq(F.formatCurrency(inKRW, 'KRW'), '₩70,000,000');
+
+  // Convert 50,000 JPY -> USD at 150 JPY/USD => 333.33 USD (33,333 cents)
+  const fiftyThousandJPY = F.toCents(50000);
+  const jpyToUSD = F.convertAmount(fiftyThousandJPY, 'JPY', 'USD', fx);
+  eq(jpyToUSD, 33333);
+  eq(F.formatCurrency(jpyToUSD, 'USD'), '$333.33');
+
+  // Convert 50,000 JPY -> KRW at 1400/150 = 9.3333... => 466,667 KRW (whole integer KRW, 0 decimals)
+  const jpyToKRW = F.convertAmount(fiftyThousandJPY, 'JPY', 'KRW', fx);
+  eq(jpyToKRW, 46666700);
+  eq(jpyToKRW % 100, 0); // 0-decimal currency must always round to whole unit
+  eq(F.formatCurrency(jpyToKRW, 'KRW'), '₩466,667');
+
+  // Identity conversion never changes amount
+  eq(F.convertAmount(fiftyThousandUSD, 'USD', 'USD', fx), fiftyThousandUSD);
+  eq(F.convertAmount(fiftyThousandJPY, 'JPY', 'JPY', fx), fiftyThousandJPY);
+});
+
+test('account denomination conversion: preserves originalAmount/originalCurrency and prevents double-conversion drift', () => {
+  const fx = {
+    base: 'USD',
+    date: '2026-04-10',
+    fetchedAt: '2026-04-10T12:00:00.000Z',
+    source: 'live',
+    rates: { USD: 1, JPY: 154.8, KRW: 1385, EUR: 0.92 },
+  };
+  const settings = {
+    monthlyBudget: 350000,
+    currency: 'USD',
+    accountCurrencies: { 'Checking': 'USD', 'Savings': 'USD', 'Visa •4021': 'USD', 'Cash': 'USD' },
+  };
+  const initialTxs = [
+    tx('income', 5000000, '2026-04-01', { id: 'tx_50k', account: 'Savings', currency: 'USD' }), // $50,000.00
+  ];
+
+  // Preview converting Savings from USD to JPY
+  const prevJPY = F.previewAccountCurrencyChange(initialTxs, settings, 'Savings', 'JPY', fx, '2026-04-10');
+  eq(prevJPY.ok, true);
+  eq(prevJPY.fromCurrency, 'USD');
+  eq(prevJPY.toCurrency, 'JPY');
+  eq(prevJPY.rate, 154.8);
+  eq(prevJPY.oldBalance, 5000000);
+  eq(prevJPY.newBalance, 774000000); // ¥7,740,000
+
+  // Execute USD -> JPY conversion on Savings
+  const step1 = F.convertAccountCurrency(initialTxs, settings, 'Savings', 'JPY', fx);
+  eq(step1.ok, true);
+  eq(step1.settings.accountCurrencies['Savings'], 'JPY');
+  eq(step1.transactions[0].amount, 774000000);
+  eq(step1.transactions[0].currency, 'JPY');
+  eq(step1.transactions[0].originalAmount, 5000000);
+  eq(step1.transactions[0].originalCurrency, 'USD');
+
+  // Re-running USD -> JPY when already JPY is a no-op (never double-converts!)
+  const noop = F.convertAccountCurrency(step1.transactions, step1.settings, 'Savings', 'JPY', fx);
+  eq(noop.ok, true);
+  eq(noop.unchanged, true);
+  eq(noop.transactions[0].amount, 774000000);
+
+  // Convert Savings from JPY -> KRW
+  const step2 = F.convertAccountCurrency(step1.transactions, step1.settings, 'Savings', 'KRW', fx);
+  eq(step2.ok, true);
+  eq(step2.settings.accountCurrencies['Savings'], 'KRW');
+  eq(step2.transactions[0].currency, 'KRW');
+  eq(step2.transactions[0].amount, 6925000000); // ₩69,250,000 (computed from originalAmount 50,000 USD!)
+  eq(step2.transactions[0].originalAmount, 5000000);
+  eq(step2.transactions[0].originalCurrency, 'USD');
+
+  // Convert Savings back from KRW -> USD: exact original $50,000.00 is restored with zero rounding drift!
+  const step3 = F.convertAccountCurrency(step2.transactions, step2.settings, 'Savings', 'USD', fx);
+  eq(step3.ok, true);
+  eq(step3.settings.accountCurrencies['Savings'], 'USD');
+  eq(step3.transactions[0].currency, 'USD');
+  eq(step3.transactions[0].amount, 5000000);
+});
+
+test('multi-currency dashboard totals & mixed-currency accounts in USD, JPY, and KRW', () => {
+  const fx = {
+    base: 'USD',
+    date: '2026-04-10',
+    fetchedAt: '2026-04-10T12:00:00.000Z',
+    source: 'live',
+    rates: { USD: 1, JPY: 150, KRW: 1400 },
+  };
+  const settings = {
+    monthlyBudget: 200000, // $2,000 USD base
+    currency: 'USD',
+    accountCurrencies: { 'Checking': 'USD', 'Savings': 'JPY', 'Visa •4021': 'USD', 'Cash': 'KRW' },
+  };
+  // Checking: +$1,000 USD (100,000)
+  // Savings: +¥150,000 JPY (15,000,000 internal units = $1,000 USD)
+  // Cash: -₩140,000 KRW (14,000,000 internal units = -$100 USD)
+  const mixedTxs = [
+    tx('income', 100000, '2026-04-02', { id: 'm1', account: 'Checking', currency: 'USD' }),
+    tx('income', 15000000, '2026-04-03', { id: 'm2', account: 'Savings', currency: 'JPY' }),
+    tx('expense', 14000000, '2026-04-05', { id: 'm3', account: 'Cash', currency: 'KRW', category: 'Dining out' }),
+  ];
+
+  // Native account balances
+  const nativeBals = F.balanceByAccountNative(mixedTxs, '2026-04-10', settings, fx);
+  eq(nativeBals['Checking'].balance, 100000);
+  eq(nativeBals['Checking'].currency, 'USD');
+  eq(nativeBals['Savings'].balance, 15000000);
+  eq(nativeBals['Savings'].currency, 'JPY');
+  eq(nativeBals['Cash'].balance, -14000000);
+  eq(nativeBals['Cash'].currency, 'KRW');
+
+  // Reporting in USD: total income = $2,000 (200,000), expense = $100 (10,000), net = $1,900 (190,000)
+  const optsUSD = { reportingCurrency: 'USD', fx, settings };
+  const sumUSD = F.summarize(mixedTxs, F.periodRange(1, '2026-04-10'), optsUSD);
+  eq(sumUSD.income, 200000);
+  eq(sumUSD.expense, 10000);
+  eq(sumUSD.net, 190000);
+  eq(F.netBalance(mixedTxs, '2026-04-10', optsUSD), 190000);
+
+  // Reporting in JPY (1 USD = 150 JPY): total income = ¥300,000 (30,000,000), expense = ¥15,000 (1,500,000), net = ¥285,000 (28,500,000)
+  const optsJPY = { reportingCurrency: 'JPY', fx, settings: { ...settings, currency: 'JPY' } };
+  const sumJPY = F.summarize(mixedTxs, F.periodRange(1, '2026-04-10'), optsJPY);
+  eq(sumJPY.income, 30000000);
+  eq(sumJPY.expense, 1500000);
+  eq(sumJPY.net, 28500000);
+
+  // Reporting in KRW (1 USD = 1400 KRW): total income = ₩2,800,000 (280,000,000), expense = ₩140,000 (14,000,000), net = ₩2,660,000 (266,000,000)
+  const optsKRW = { reportingCurrency: 'KRW', fx, settings: { ...settings, currency: 'KRW' } };
+  const sumKRW = F.summarize(mixedTxs, F.periodRange(1, '2026-04-10'), optsKRW);
+  eq(sumKRW.income, 280000000);
+  eq(sumKRW.expense, 14000000);
+  eq(sumKRW.net, 266000000);
+});
+
+test('exchange rate service: live fetch, failure fallback, stale detection, and missing rate handling', async () => {
+  const s = memStore();
+  const nowMs = Date.parse('2026-04-10T12:00:00.000Z');
+
+  // 1. Successful live fetch caches rates
+  const okFetch = async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({
+      time_last_update_utc: 'Fri, 10 Apr 2026 00:00:01 +0000',
+      rates: { USD: 1, JPY: 155.2, KRW: 1390.5, EUR: 0.91 },
+    }),
+  });
+  const res1 = await F.fetchExchangeRates(okFetch, s, nowMs);
+  eq(res1.ok, true);
+  eq(res1.fx.source, 'live');
+  eq(res1.fx.rates.JPY, 155.2);
+  eq(res1.fx.rates.KRW, 1390.5);
+  eq(F.isFxStale(res1.fx, nowMs + 1000), false);
+  // Stale after > 24 hours
+  eq(F.isFxStale(res1.fx, nowMs + 25 * 60 * 60 * 1000), true);
+
+  // 2. Failed live fetch falls back to cached live snapshot gracefully
+  const failFetch = async () => ({ ok: false, status: 503 });
+  const res2 = await F.fetchExchangeRates(failFetch, s, nowMs + 5000);
+  eq(res2.ok, false);
+  eq(res2.fx.rates.JPY, 155.2);
+
+  // 3. Missing currency rate returns null (never silently swaps symbol)
+  eq(F.getExchangeRate('USD', 'CHF', res1.fx), null);
+  eq(F.convertAmount(100000, 'USD', 'CHF', res1.fx), null);
+  const badPrev = F.previewAccountCurrencyChange([], {}, 'Checking', 'CHF', res1.fx);
+  eq(badPrev.ok, false);
+});
+
+function publishResults() {
+  const fails = results.filter(r => !r[0]);
+  document.getElementById('sum').textContent = `${results.length - fails.length}/${results.length} passed`;
+  document.getElementById('sum').className = fails.length ? 'f' : 'p';
+  document.getElementById('out').innerHTML = results.map(([ok, n]) => `<div class="${ok ? 'p' : 'f'}">${ok ? '✓' : '✗'} ${n}</div>`).join('');
+  window.__results = { total: results.length, fails };
+}
+window.__pending = Promise.all(pendingAsync).then(() => { publishResults(); return window.__results; });
+publishResults();
+</script></body></html>
