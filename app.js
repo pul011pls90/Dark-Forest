@@ -337,12 +337,13 @@
     const pick = p => geo && p.x >= geo.pl && Math.max(0, Math.min(geo.S.length - 1, Math.floor((p.x - geo.pl) / geo.cw)));
     const onPoint = e => { const p = at(e), i = pick(p); if (i === false) return hideCrosshair(); showCrosshair(i, p.y); };
     el.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.buttons) onPoint(e); });
-    el.addEventListener('pointerdown', onPoint);
+    el.addEventListener('pointerdown', e => { el.dataset.pointer = '1'; onPoint(e); });
     el.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') hideCrosshair(); });
     document.addEventListener('pointerdown', e => { if (!el.contains(e.target)) hideCrosshair(); });
     el.addEventListener('focus', () => { if (!active && geo) showCrosshair(geo.S.length - 1); });
-    el.addEventListener('blur', hideCrosshair);
+    el.addEventListener('blur', () => { delete el.dataset.pointer; hideCrosshair(); });
     el.addEventListener('keydown', e => {
+      delete el.dataset.pointer;
       if (!geo) return;
       const n = geo.S.length, i = active ? active.i : n - 1;
       const next = { ArrowLeft: i - 1, ArrowRight: i + 1, Home: 0, End: n - 1 }[e.key];
@@ -361,22 +362,19 @@
     $('#stack').innerHTML = cats.map(c => `<i style="flex:${c.amount};background:${catColor(c.category)}" class="${c.category === active ? 'on' : ''}"></i>`).join('');
     $('#cats').innerHTML = cats.length ? cats.map(c => {
       const share = tot > 0 ? c.amount / tot : 0;
-      const onSegs = Math.max(1, Math.round(share * 8));
-      return `<div class="cat ${c.category === active ? 'on' : ''}" role="button" tabindex="0" aria-pressed="${c.category === active}" data-c="${esc(c.category)}"><span class="sw" style="background:${catColor(c.category)}"></span><span class="nm">${esc(c.category)}</span><span class="px-bar sm" style="width:52px;display:inline-grid" aria-hidden="true">${segCells('cat:' + c.category, 8, onSegs, 'on')}</span><span class="mono">${fmt(c.amount, 0)}</span></div>`;
+      const onSegs = Math.max(1, Math.round(share * 12));
+      return `<div class="cat ${c.category === active ? 'on' : ''}" role="button" tabindex="0" aria-pressed="${c.category === active}" data-c="${esc(c.category)}" title="${esc(c.category)}: ${fmt(c.amount)} (${(share * 100).toFixed(1)}%)"><span class="sw" style="background:${catColor(c.category)}"></span><span class="nm">${esc(c.category)}</span><span class="px-bar sm" aria-hidden="true">${segCells('cat:' + c.category, 12, onSegs, 'on')}</span><span class="mono sub pct">${(share * 100).toFixed(0)}%</span><span class="mono val">${fmt(c.amount, 0)}</span></div>`;
     }).join('')
       : '<p class="sub">No expenses in this period.</p>';
   }
 
-  const bar10 = (key, r) => {
-    const cls = r > 1 ? 'over' : r >= 0.8 ? 'warn' : 'on';
-    return segCells(key, 10, Math.min(10, Math.round(r * 10)), cls);
-  };
   const ra = (kind, id, label) => `<div class="ra"><button data-${kind}edit="${esc(id)}" aria-label="Edit ${esc(label)}" title="Edit">✎</button><button class="del" data-${kind}del="${esc(id)}" aria-label="Delete ${esc(label)}" title="Delete">✕</button></div>`;
 
   function renderBudget() {
     const m = F.monthlyBudgetStatus(state.txs, state.settings, state.today, state.fx), p = m.pct / 100;
     const curMonthName = monthLong(state.today);
-    $('#budMonth').textContent = curMonthName;
+    $('#budMonth').textContent = monthName(state.today.slice(0, 7));
+    $('#budMonth').title = curMonthName;
     if ($('#budMonthFull')) $('#budMonthFull').textContent = curMonthName;
     $('#budLabel').textContent = `Spent of ${fmt(m.limit, 0)}`;
     const N = 40, on = Math.min(N, Math.ceil(p * N - 1e-9)), prev = Math.min(segPrev.get('ring') ?? 0, on); let s = '';
@@ -386,7 +384,11 @@
       const a = (i / N) * Math.PI * 2 - Math.PI / 2, r = 62, x = 75 + r * Math.cos(a), yy = 75 + r * Math.sin(a), fresh = i < on && i >= prev;
       s += `<rect x="${x - 4}" y="${yy - 4}" width="8" height="8"${fresh ? ` class="fresh" style="--k:${i - prev};fill:` : ' style="fill:'}${i < on ? ringColor : 'var(--surface-2)'}" transform="rotate(${i / N * 360} ${x} ${yy})"/>`;
     }
-    s += `<text x="75" y="74" text-anchor="middle" style="fill:var(--text);font:600 19px var(--font-mono)">${fmt(m.spent, 0)}</text><text x="75" y="94" text-anchor="middle">${m.pct.toFixed(0)}% · ${m.over ? fmt(-m.remaining, 0) + ' over' : fmt(m.remaining, 0) + ' left'}</text>`;
+    const ringAmt = fmt(m.spent, 0);
+    const ringFs = ringAmt.length > 9 ? 14 : ringAmt.length > 7 ? 16 : 19;
+    s += `<text x="75" y="72" text-anchor="middle" style="fill:var(--text);font:600 ${ringFs}px var(--font-mono)">${ringAmt}</text>`
+      + `<text x="75" y="89" text-anchor="middle" style="font-size:10.5px;fill:${m.over ? 'var(--danger)' : m.warning ? 'var(--warn)' : 'var(--muted)'}">${m.pct.toFixed(0)}% used</text>`
+      + `<text x="75" y="103" text-anchor="middle" style="font-size:10.5px">${m.over ? fmt(-m.remaining, 0) + ' over' : fmt(m.remaining, 0) + ' left'}</text>`;
     $('#ring').innerHTML = s;
     $('#ring').setAttribute('aria-label', `${fmt(m.spent, 0)} spent of ${fmt(m.limit, 0)} monthly budget`);
 
@@ -395,13 +397,18 @@
       const statusCls = b.over ? 'danger' : b.warning ? 'warning' : 'ok';
       const statusText = b.over ? 'Over budget' : b.warning ? 'Near limit' : 'On track';
       const remText = b.over ? `<span class="neg">${fmt(-b.remaining, 0)} over</span>` : `${fmt(b.remaining, 0)} left`;
-      return `<div class="brow st-${statusCls}" title="${fmt(b.spent)} of ${fmt(b.limit, 0)}">
-        <span class="nm">${esc(b.category)}</span>
-        <span class="full mono sub">${fmt(b.spent, 0)} / ${fmt(b.limit, 0)} · ${remText}</span>
-        <span class="b-status ${statusCls}">${statusText}</span>
-        <span class="mono sub ${b.over ? 'neg' : ''}">${Math.round(b.pct)}%</span>
-        <span class="bar">${bar10('b:' + b.category, b.pct / 100)}</span>
-        ${ra('b', b.id, b.category + ' budget')}
+      const rSegCls = b.over ? 'over' : b.warning ? 'warn' : 'on';
+      return `<div class="brow st-${statusCls}" title="${esc(b.category)}: ${fmt(b.spent)} of ${fmt(b.limit, 0)}">
+        <div class="brow-top">
+          <span class="nm">${esc(b.category)}</span>
+          <span class="b-status ${statusCls}">${statusText}</span>
+          <span class="mono pct ${b.over ? 'neg' : 'sub'}">${Math.round(b.pct)}%</span>
+          ${ra('b', b.id, b.category + ' budget')}
+        </div>
+        <div class="brow-bot">
+          <span class="px-bar" aria-hidden="true">${segCells('b:' + b.category, 16, Math.min(16, Math.round((b.pct / 100) * 16)), rSegCls)}</span>
+          <span class="mono sub amt-lbl">${fmt(b.spent, 0)} / ${fmt(b.limit, 0)}<span class="full"> · ${remText}</span></span>
+        </div>
       </div>`;
     }).join('') : '<p class="sub" style="padding:10px 0;border-top:1px solid var(--line)">No category budgets yet. Add one to track a category against a monthly limit.</p>';
 
@@ -481,36 +488,34 @@
       $('#goalsCountFull').textContent = `${state.goals.length} active savings goal${state.goals.length === 1 ? '' : 's'}`;
     }
 
-    // Overview goals list
-    $('#goalList').innerHTML = state.goals.map(g => {
+    // Overview goals list — compact single-column rows inside the "Savings goals" card
+    $('#goalList').innerHTML = state.goals.length ? state.goals.map(g => {
       const p = F.goalProgress(g, state.today), on = p.done ? 12 : Math.floor(p.pct / 100 * 12);
       const gSaved = convFromUSD(g.saved);
       const gTarget = convFromUSD(g.target);
       const gRem = convFromUSD(p.remaining);
       const gPerMonth = p.perMonth !== null ? convFromUSD(p.perMonth) : null;
       const gSuggested = convFromUSD(F.suggestedContribution(g, state.today, 12));
-      const suggested = p.done ? 'Goal reached ✓'
-        : p.overdue ? `Overdue · was due ${monthLong(g.deadline)}`
-        : gPerMonth !== null ? `${fmt(gPerMonth, 0)}/mo to reach target by ${monthLong(g.deadline)} (${p.monthsLeft} mo left)`
-        : `${fmt(gSuggested, 0)}/mo (suggested 12-mo target)`;
+      const suggested = p.done ? '<b>Goal reached ✓</b>'
+        : p.overdue ? `<span class="neg">Overdue · was due ${monthLong(g.deadline)}</span>`
+        : gPerMonth !== null ? `<b>${fmt(gPerMonth, 0)}/mo</b> to finish by ${monthLong(g.deadline)}`
+        : `<b>${fmt(gSuggested, 0)}/mo</b> suggested (12-mo pace)`;
       return `<article class="goal" aria-label="${esc(g.name)}">
-        <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="goal-head">
           <span class="pix" style="font-size:10px;color:var(--muted)">${esc(g.tag)}</span>
+          <span class="gname">${esc(g.name)}</span>
           <span class="badge ${p.pct >= 90 ? 'up' : ''}" style="${p.pct < 90 ? 'color:var(--muted)' : ''}">${Math.floor(p.pct)}%</span>
         </div>
-        <div style="font-weight:600;margin-top:8px;font-size:13.5px">${esc(g.name)}</div>
-        <div class="px">${segCells('g:' + g.id, 12, on, p.overdue ? 'warn' : 'on')}</div>
-        <div class="sub"><span class="mono" style="color:var(--text);font-weight:600">${fmt(gSaved, 0)}</span> / ${fmt(gTarget, 0)} · <span class="mono">${fmt(gRem, 0)} to go</span></div>
-        <div class="g-suggested mono">${suggested}</div>
+        <div class="px" aria-hidden="true">${segCells('g:' + g.id, 12, on, p.overdue ? 'warn' : 'on')}</div>
+        <div class="goal-meta"><span><span class="mono" style="color:var(--text);font-weight:600">${fmt(gSaved, 0)}</span> <span class="sub">/ ${fmt(gTarget, 0)}</span></span><span class="mono sub">${fmt(gRem, 0)} to go</span></div>
+        <div class="goal-sug mono">${suggested}</div>
         <div class="gact">
-          <div style="display:flex;gap:4px">
-            <button class="btn sm pri" data-gaction="deposit" data-gid="${esc(g.id)}" aria-label="Contribute to ${esc(g.name)}">+ Contribute</button>
-            <button class="btn sm dk" data-gaction="withdraw" data-gid="${esc(g.id)}" aria-label="Withdraw from ${esc(g.name)}">− Withdraw</button>
-          </div>
+          <button class="btn sm pri" data-gaction="deposit" data-gid="${esc(g.id)}" aria-label="Contribute to ${esc(g.name)}">+ Contribute</button>
+          <button class="btn sm dk" data-gaction="withdraw" data-gid="${esc(g.id)}" aria-label="Withdraw from ${esc(g.name)}">− Withdraw</button>
           ${ra('g', g.id, g.name)}
         </div>
       </article>`;
-    }).join('') + '<button class="goal addgoal" data-gnew>+ New goal</button>';
+    }).join('') : '<p class="sub" style="padding:12px 0;border-top:1px solid var(--line)">No savings goals yet. Use “+ New goal” to create one.</p>';
 
     // Dedicated Goals View Grid
     if ($('#goalsGridFull')) {
@@ -1799,7 +1804,7 @@
     const swText = $('#swStateText');
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
       navigator.serviceWorker.register('./sw.js').then(reg => {
-        if (swText) swText.textContent = 'Active · App shell cached for offline launch (v7)';
+        if (swText) swText.textContent = 'Active · App shell cached for offline launch (v8)';
         reg.addEventListener('updatefound', () => {
           const nw = reg.installing;
           if (!nw) return;
