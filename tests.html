@@ -700,6 +700,26 @@ test('footer terms of use: includes personal budgeting terms, disclaimer, and ba
   }
 });
 
+test('category & budget label hover safety: bare .nm:hover scale does not distort text shapes', async () => {
+  // Fetch index.html to inspect stylesheet integrity
+  try {
+    const res = await fetch('index.html');
+    if (res.ok) {
+      const html = await res.text();
+      // Ensure bare .nm:hover scaling was eliminated
+      if (html.includes('.nm:hover{transform:scale(') || html.includes('.nm:hover { transform: scale(')) {
+        throw new Error('Detected bare .nm:hover scaling which causes category labels to overlap adjacent elements');
+      }
+      if (!html.includes('rect.nm:hover')) {
+        throw new Error('rect.nm:hover must be scoped to SVG elements');
+      }
+    }
+  } catch (e) {
+    if (e.message.includes('bare .nm:hover') || e.message.includes('rect.nm:hover')) throw e;
+    // file:// protocol fetch restriction in some environments is skipped safely
+  }
+});
+
 function publishResults() {
   const fails = results.filter(r => !r[0]);
   document.getElementById('sum').textContent = `${results.length - fails.length}/${results.length} passed`;

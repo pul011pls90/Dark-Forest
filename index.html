@@ -408,7 +408,8 @@ dialog[open]{animation:dlg-in 180ms var(--ease-out)}
 @keyframes dlg-in{from{opacity:0;transform:translateY(6px)}}
 
 .btn,.ib,.tabs button,.seg button,.ra button,.cat,.goal,.addgoal,tbody tr,.qchip{transition:background-color var(--dur-fast),color var(--dur-fast),border-color var(--dur-fast),transform 90ms var(--ease-out),filter var(--dur-fast)}
-.btn:active,.ib:active,.ra button:active,.seg button:active,.tabs button:active,.addgoal:active,.cat:active,.qchip:active{transform:scale(.97)}
+.btn:active,.ib:active,.ra button:active,.seg button:active,.tabs button:active,.addgoal:active,.qchip:active{transform:scale(.97)}
+.cat:active{background:var(--surface-emerald-ghost);opacity:.9}
 
 @media (hover:hover){
   .ib:hover{background:var(--surface-2)}
@@ -493,7 +494,7 @@ dialog[open]{animation:dlg-in 180ms var(--ease-out)}
 .net-pulse{stroke-dasharray:14 360;stroke-dashoffset:360;opacity:0;animation:signal-travel 7s ease-in-out infinite;animation-delay:1.5s;pointer-events:none}
 @keyframes signal-travel{0%{stroke-dashoffset:380;opacity:0}6%{opacity:.85}85%{opacity:.85}100%{stroke-dashoffset:-40;opacity:0}}
 
-.nm.cur{animation:nm-pulse 2.8s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+rect.nm.cur{animation:nm-pulse 2.8s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
 @keyframes nm-pulse{0%,100%{stroke:var(--accent);transform:scale(1)}50%{stroke:#fff;transform:scale(1.22);filter:drop-shadow(0 0 3px var(--accent))}}
 
 /* Pixel balance grid subtle telemetry shimmer */
@@ -552,14 +553,16 @@ body.tab-inactive *{animation-play-state:paused!important}
 
 /* Interactive Details: Restrained Hover & Tap Responses */
 .cbar rect.px-seg:hover{filter:brightness(1.3) drop-shadow(0 0 2px var(--accent))!important;transition:filter var(--dur-fast) var(--ease-out)}
-.nm:hover{transform:scale(1.35);filter:brightness(1.35);transition:transform var(--dur-fast) var(--ease-out),filter var(--dur-fast)}
+rect.nm:hover{transform:scale(1.35);transform-box:fill-box;transform-origin:center;filter:brightness(1.35);transition:transform var(--dur-fast) var(--ease-out),filter var(--dur-fast)}
+.cat .nm,.brow .nm{transform:none!important;filter:none!important}
+.stack i:hover{filter:brightness(1.25);cursor:pointer}
 
 /* User-controlled Pause of Ambient Decorative Motion */
 body.no-ambient-motion .cbar rect.px-seg,
 body.no-ambient-motion .cbar.cur rect.px-seg,
 body.no-ambient-motion .net-track,
 body.no-ambient-motion .net-pulse,
-body.no-ambient-motion .nm.cur,
+body.no-ambient-motion rect.nm.cur,
 body.no-ambient-motion .chartwrap::before,
 body.no-ambient-motion .pxgrid i.a,
 body.no-ambient-motion #ring rect.lead,
