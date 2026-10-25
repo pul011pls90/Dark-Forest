@@ -417,7 +417,9 @@ dialog[open]{animation:dlg-in 180ms var(--ease-out)}
 }
 
 @media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:1ms!important;animation-delay:0s!important;transition-duration:1ms!important;transition-delay:0s!important}
+  *,*::before,*::after{animation-duration:1ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:1ms!important;transition-delay:0s!important}
+  .chartwrap::before,.net-pulse{display:none!important}
+  .net-track{stroke-dashoffset:0!important;animation:none!important}
 }
 
 /* Toast & Notice */
@@ -471,9 +473,44 @@ dialog[open]{animation:dlg-in 180ms var(--ease-out)}
 .px-bar i.on{background:var(--pos)}
 .px-bar i.warn{background:var(--warn)}
 .px-bar i.over{background:var(--danger)}
-.cbar rect.px-seg{transition:fill var(--dur-fast),opacity var(--dur-fast)}
-.enter .cbar rect.px-seg{animation:seg-pop 200ms var(--ease-out) both;animation-delay:calc(var(--i,0) * 20ms + var(--seg-i,0) * 9ms)}
+/* Living Charts & Terminal Telemetry Motion */
+.chartwrap::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,rgba(0,223,129,.24) 50%,transparent 100%);pointer-events:none;opacity:0;animation:chart-scanline 9s ease-in-out infinite;animation-delay:2s;z-index:2}
+@keyframes chart-scanline{0%{top:4%;opacity:0}3%{opacity:.5}22%{top:88%;opacity:.4}25%{opacity:0;top:92%}100%{opacity:0;top:92%}}
+
+.cbar rect.px-seg{transition:fill var(--dur-fast),opacity var(--dur-fast);animation:seg-idle-shimmer 5.5s ease-in-out infinite;animation-delay:calc(var(--i,0) * .32s + var(--seg-i,0) * .12s)}
+.enter .cbar rect.px-seg{animation:seg-pop 200ms var(--ease-out) both,seg-idle-shimmer 5.5s ease-in-out infinite;animation-delay:calc(var(--i,0) * 20ms + var(--seg-i,0) * 9ms),calc(300ms + var(--i,0) * .32s + var(--seg-i,0) * .12s)}
 @keyframes seg-pop{from{opacity:0;transform:scaleY(.2)}}
+@keyframes seg-idle-shimmer{0%,100%{filter:brightness(1)}50%{filter:brightness(1.15)}}
+
+/* Current active month bar breathing */
+.cbar.cur rect.px-seg{animation:cur-bar-breathe 3.4s ease-in-out infinite;animation-delay:calc(var(--seg-i,0) * .07s)}
+@keyframes cur-bar-breathe{0%,100%{filter:brightness(1.02);opacity:.94}50%{filter:brightness(1.26);opacity:1}}
+
+/* Traveling Signal along Net Line */
+.net-track{animation:net-dash-drift 18s linear infinite}
+@keyframes net-dash-drift{from{stroke-dashoffset:0}to{stroke-dashoffset:-64}}
+
+.net-pulse{stroke-dasharray:14 360;stroke-dashoffset:360;opacity:0;animation:signal-travel 7s ease-in-out infinite;animation-delay:1.5s;pointer-events:none}
+@keyframes signal-travel{0%{stroke-dashoffset:380;opacity:0}6%{opacity:.85}85%{opacity:.85}100%{stroke-dashoffset:-40;opacity:0}}
+
+.nm.cur{animation:nm-pulse 2.8s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes nm-pulse{0%,100%{stroke:var(--accent);transform:scale(1)}50%{stroke:#fff;transform:scale(1.22);filter:drop-shadow(0 0 3px var(--accent))}}
+
+/* Pixel balance grid subtle telemetry shimmer */
+.pxgrid i.a{animation:px-shimmer 4.8s ease-in-out infinite;animation-delay:calc(var(--pi,0) * .12s)}
+@keyframes px-shimmer{0%,100%{filter:brightness(1)}50%{filter:brightness(1.24)}}
+
+/* Budget Donut Ring leading cell indicator */
+#ring rect.lead{animation:ring-cell-pulse 2.6s ease-in-out infinite}
+@keyframes ring-cell-pulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.36)}}
+
+/* Progress pixel bars gentle alive state */
+.px-bar i.on{animation:px-bar-idle 6s ease-in-out infinite;animation-delay:calc(var(--k,1) * .2s)}
+@keyframes px-bar-idle{0%,100%{opacity:.94}50%{opacity:1;filter:brightness(1.12)}}
+
+/* Power saving on inactive tab */
+body.tab-inactive *{animation-play-state:paused!important}
+
 .cbar:hover rect.px-seg{filter:brightness(1.2)}
 .cat:hover .px-bar i.on,.cat:focus-visible .px-bar i.on{filter:brightness(1.18)}
 

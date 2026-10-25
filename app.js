@@ -183,10 +183,12 @@
     const mx = Math.max(...s), mn = Math.min(0, Math.min(...s)), span = mx - mn || 1;
     const hs = s.map(v => Math.max(1, Math.round((v - mn) / span * 10)));
     const hl = Math.min(state.period, 10);
-    let h = '';
+    let h = '', aIdx = 0;
     for (let r = 9; r >= 0; r--) for (let c = 0; c < 10; c++) {
       const inPer = c >= 10 - hl, on = r < hs[c];
-      h += `<i class="${on ? (r === hs[c] - 1 ? (inPer ? 'a' : 'c') : (inPer ? 'b' : 'c')) : ''}"></i>`;
+      const cls = on ? (r === hs[c] - 1 ? (inPer ? 'a' : 'c') : (inPer ? 'b' : 'c')) : '';
+      const pi = cls === 'a' ? ` style="--pi:${aIdx++}"` : '';
+      h += `<i class="${cls}"${pi}></i>`;
     }
     $('#pxgrid').innerHTML = h;
   }
@@ -272,7 +274,7 @@
         const t = y(v), b = y(0);
         heights[m.month][k] = v ? b - t : 0;
         if (!v) return;
-        s += `<g class="cbar" data-m="${m.month}" data-k="${k}" style="--i:${i * 2 + j}">`;
+        s += `<g class="cbar${cur ? ' cur' : ''}" data-m="${m.month}" data-k="${k}" style="--i:${i * 2 + j}">`;
         let segIdx = 0;
         for (let yy = b - blk; yy >= t - blk + 0.5; yy -= blk) {
           const topSeg = yy - blk < t - blk + 0.5;
@@ -285,8 +287,14 @@
       const labelText = isLabelVisible ? monthName(m.month) : '';
       s += `<text x="${cx}" y="${H - 6}" text-anchor="middle" ${cur ? 'style="fill:var(--text);font-weight:600"' : ''}>${labelText}</text>`;
     });
-    s += `<g class="netl" style="--n:${n * 2}"><polyline points="${S.map((m, i) => `${pl + cw * i + cw / 2},${y(m.net)}`).join(' ')}" fill="none" style="stroke:var(--text)" stroke-width="1.5" stroke-dasharray="3 3"/>`;
-    S.forEach((m, i) => s += `<rect class="nm" data-m="${m.month}" x="${pl + cw * i + cw / 2 - 3}" y="${y(m.net) - 3}" width="6" height="6" style="fill:var(--bg);stroke:${m.net < 0 ? 'var(--danger)' : 'var(--text)'}"/>`);
+    const netPoints = S.map((m, i) => `${pl + cw * i + cw / 2},${y(m.net)}`).join(' ');
+    s += `<g class="netl" style="--n:${n * 2}">`;
+    s += `<polyline class="net-track" points="${netPoints}" fill="none" style="stroke:var(--text)" stroke-width="1.5" stroke-dasharray="4 4"/>`;
+    s += `<polyline class="net-pulse" points="${netPoints}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>`;
+    S.forEach((m, i) => {
+      const cur = i === n - 1;
+      s += `<rect class="nm${cur ? ' cur' : ''}" data-m="${m.month}" x="${pl + cw * i + cw / 2 - 3}" y="${y(m.net) - 3}" width="6" height="6" style="fill:var(--bg);stroke:${m.net < 0 ? 'var(--danger)' : 'var(--text)'}"/>`;
+    });
     s += `</g><g class="xh" style="display:none"><line class="xh-v" y1="${pt}" y2="${H - pb}"/><line class="xh-h" x1="${pl}" x2="${W}"/><rect class="xh-lbl" x="0" width="${pl - 4}" height="16" rx="3"/><text class="xh-t" x="2"></text></g></svg>`;
     el.querySelectorAll('svg').forEach(x => x.remove());
     el.insertAdjacentHTML('beforeend', s);
@@ -387,7 +395,10 @@
     const ringColor = m.over ? 'var(--danger)' : m.warning ? 'var(--warn)' : 'var(--pos)';
     for (let i = 0; i < N; i++) {
       const a = (i / N) * Math.PI * 2 - Math.PI / 2, r = 62, x = 75 + r * Math.cos(a), yy = 75 + r * Math.sin(a), fresh = i < on && i >= prev;
-      s += `<rect x="${x - 4}" y="${yy - 4}" width="8" height="8"${fresh ? ` class="fresh" style="--k:${i - prev};fill:` : ' style="fill:'}${i < on ? ringColor : 'var(--surface-2)'}" transform="rotate(${i / N * 360} ${x} ${yy})"/>`;
+      const isLead = i === on - 1;
+      const cls = (fresh ? 'fresh ' : '') + (isLead ? 'lead ' : '');
+      const clsAttr = cls ? ` class="${cls.trim()}"` : '';
+      s += `<rect x="${x - 4}" y="${yy - 4}" width="8" height="8"${clsAttr}${fresh ? ` style="--k:${i - prev};fill:` : ' style="fill:'}${i < on ? ringColor : 'var(--surface-2)'}" transform="rotate(${i / N * 360} ${x} ${yy})"/>`;
     }
     const ringAmt = fmt(m.spent, 0);
     const ringFs = ringAmt.length > 9 ? 14 : ringAmt.length > 7 ? 16 : 19;
@@ -1991,6 +2002,7 @@
     if ($('#exportCsvTableBtn')) $('#exportCsvTableBtn').onclick = exportCSV;
     if ($('#restoreBtn')) $('#restoreBtn').onclick = openRestoreDialog;
     window.addEventListener('resize', () => { clearTimeout(window._r); window._r = setTimeout(() => renderChart({ animate: false }), 120); });
+    document.addEventListener('visibilitychange', () => { document.body.classList.toggle('tab-inactive', document.hidden); });
     bindChart();
     initPWA();
     renderAll();
