@@ -750,8 +750,17 @@
     $('#count').textContent = `Showing ${shown.length} of ${rows.length}${filtered ? ' matching' : ''} transaction${rows.length === 1 ? '' : 's'}`;
     $('#moreBtn').hidden = full || rows.length <= PAGE;
     document.querySelectorAll('th[data-k]').forEach(th => {
-      const b = th.querySelector('button'); b.textContent = b.textContent.replace(/ [↑↓]$/, '');
-      if (th.dataset.k === state.sortKey) b.textContent += state.sortDir > 0 ? ' ↑' : ' ↓';
+      const b = th.querySelector('button');
+      const arr = b.querySelector('.sort-arr');
+      if (arr) arr.remove();
+      b.textContent = b.textContent.replace(/ [↑↓]$/, '').trim();
+      if (th.dataset.k === state.sortKey) {
+        const s = document.createElement('span');
+        s.className = 'sort-arr';
+        s.setAttribute('aria-hidden', 'true');
+        s.textContent = state.sortDir > 0 ? '↑' : '↓';
+        b.appendChild(s);
+      }
       th.setAttribute('aria-sort', th.dataset.k === state.sortKey ? (state.sortDir > 0 ? 'ascending' : 'descending') : 'none');
     });
   }
@@ -1079,7 +1088,7 @@
       </div>
 
       <div class="insight-card">
-        <div class="ch" style="margin:0"><div class="ico">↑</div><div class="insight-title">Savings Rate & Streak</div></div>
+        <div class="ch" style="margin:0"><div class="ico" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10.5v-9M2.5 5 6 1.5 9.5 5"/></svg></div><div class="insight-title">Savings Rate & Streak</div></div>
         <div class="insight-val mono ${cur.savingsRate !== null && cur.savingsRate < 30 ? 'neg' : ''}">${cur.savingsRate !== null ? cur.savingsRate.toFixed(1) + '%' : '—'}</div>
         <div class="px-bar" aria-hidden="true">${segCells('ins-rate', 16, Math.min(16, rateSegOn), rateSegCls)}</div>
         <div class="insight-desc">${cur.savingsRate !== null && cur.savingsRate >= 30 ? 'Exceeding the 30% savings benchmark.' : 'Below 30% target rate.'} Active ${streak}-month consecutive 30%+ streak.</div>

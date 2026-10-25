@@ -128,7 +128,8 @@ nav.top{display:flex;align-items:center;gap:18px;margin-bottom:var(--gap)}
 .ch{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .ch h3{white-space:nowrap;font-size:14px;font-weight:var(--fw-semibold);letter-spacing:-.01em;color:var(--text)}
 .ch .sp{flex:1}
-.ico{width:28px;height:28px;border-radius:var(--r-sm);background:var(--brand-ghost);color:var(--pos);display:grid;place-items:center;font-size:13px}
+.ico{width:28px;height:28px;border-radius:var(--r-sm);background:var(--brand-ghost);color:var(--pos);display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1;user-select:none;flex-shrink:0}
+.ico svg{display:block}
 .ico.red{background:var(--danger-ghost);color:var(--danger)}
 .chip{white-space:nowrap;font-size:11.5px;color:var(--muted);border:1px solid var(--line);border-radius:var(--r-pill);padding:4px 10px;display:inline-flex;align-items:center;gap:5px;font-weight:var(--fw-medium)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r-btn);padding:2px;background:var(--bg)}
@@ -357,7 +358,10 @@ th button{all:inherit;cursor:pointer}
 .ra button.del:hover{color:var(--danger);border-color:rgba(255,102,102,.3)}
 .typetag{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:middle}
 .tfoot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:14px;color:var(--muted);font-size:12px;flex-wrap:wrap}
-select.chip{background:var(--bg);color:var(--text);font:inherit;font-size:12px;appearance:none;padding:6px 26px 6px 12px;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 13px) 50%,calc(100% - 9px) 50%;background-size:4px 4px;background-repeat:no-repeat}
+select,select.inp,select.chip,.sel{appearance:none;-webkit-appearance:none;-moz-appearance:none;background-color:var(--bg);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='none' stroke='%239AB2A9' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' d='M1 1l4 4 4-4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:10px 6px;padding-right:28px!important;cursor:pointer}
+select:focus,select.inp:focus,select.chip:focus,.sel:focus{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='none' stroke='%2300DF81' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' d='M1 1l4 4 4-4'/%3E%3C/svg%3E")}
+select.chip{padding:5px 26px 5px 10px!important;font-size:12px;background-position:right 9px center;background-size:9px 5.5px}
+.sort-arr{display:inline-block;vertical-align:middle;margin-left:5px;color:var(--accent);font-size:11px;line-height:1}
 
 /* Standardized Dialogs */
 dialog{margin:auto;background:var(--surface);color:var(--text);border:1px solid var(--line-emerald);border-radius:var(--r);padding:0;width:min(480px,calc(100% - 32px));max-height:calc(100vh - 32px);box-shadow:var(--shadow-dialog)}
@@ -440,7 +444,9 @@ dialog[open]{animation:dlg-in 180ms var(--ease-out)}
 .offline-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:var(--r-pill);background:var(--warn-ghost);border:1px solid var(--warn-line);color:var(--warn);font-size:11.5px;font-weight:var(--fw-semibold)}
 .offline-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--warn)}
 .qa-card{margin-bottom:var(--gap);padding:14px 18px;border:1px solid var(--line-emerald);background:linear-gradient(180deg,rgba(0,101,79,.12),var(--surface))}
-.qa-form{display:grid;grid-template-columns:auto 135px 1fr 165px auto;gap:8px;align-items:center}
+.qa-form{display:grid;grid-template-columns:126px 145px 1fr 165px auto;gap:8px;align-items:center}
+#qaType{min-width:124px}
+#qaCat{min-width:140px}
 .qa-form .inp{padding:7px 10px;font-size:12.5px}
 .qa-form .money .inp{padding-left:32px;font-size:13px;font-weight:var(--fw-semibold)}
 .qa-recents{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;color:var(--muted)}
@@ -553,7 +559,7 @@ body.tab-inactive *{animation-play-state:paused!important}
 
 /* Interactive Details: Restrained Hover & Tap Responses */
 .cbar rect.px-seg:hover{filter:brightness(1.3) drop-shadow(0 0 2px var(--accent))!important;transition:filter var(--dur-fast) var(--ease-out)}
-rect.nm:hover{transform:scale(1.35);transform-box:fill-box;transform-origin:center;filter:brightness(1.35);transition:transform var(--dur-fast) var(--ease-out),filter var(--dur-fast)}
+rect.nm:hover{filter:brightness(1.35) drop-shadow(0 0 2px var(--accent));transition:filter var(--dur-fast)}
 .cat .nm,.brow .nm{transform:none!important;filter:none!important}
 .stack i:hover{filter:brightness(1.25);cursor:pointer}
 
@@ -621,7 +627,7 @@ body.no-ambient-motion .net-pulse{display:none!important}
   .tabs::-webkit-scrollbar{display:none}
   .tabs button{flex:1;white-space:nowrap}
   .bud-metrics,.goals-metrics{grid-template-columns:1fr 1fr}
-  .qa-form{grid-template-columns:auto 1fr 1fr;gap:8px}
+  .qa-form{grid-template-columns:126px 1fr 1fr;gap:8px}
   .rec-grid{grid-template-columns:1fr}
 }
 
@@ -688,7 +694,7 @@ body.no-ambient-motion .net-pulse{display:none!important}
   .ib{width:32px;height:32px;min-width:32px}
   .me{padding:2px;border-radius:50%}
   .me .av{width:26px;height:26px;font-size:10px}
-  #topCurrencySelect{padding:4px 18px 4px 6px;font-size:11px;max-width:68px}
+  #topCurrencySelect{padding:4px 22px 4px 8px!important;font-size:11px;max-width:74px;background-position:right 7px center}
   #installBtn{display:none}
   .bud-grid,.goals-grid-full,.insights-grid{grid-template-columns:1fr;gap:10px}
   .gcard-actions{flex-wrap:wrap;gap:6px}
@@ -767,14 +773,14 @@ body.no-ambient-motion .net-pulse{display:none!important}
   </div>
 
   <div class="card corner">
-    <div class="ch"><div class="ico">↓</div><h3>Income</h3><span class="sp"></span><span class="chip" id="incPeriod"></span></div>
+    <div class="ch"><div class="ico" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 1.5v9M2.5 7l3.5 3.5 3.5-3.5"/></svg></div><h3>Income</h3><span class="sp"></span><span class="chip" id="incPeriod"></span></div>
     <div class="mid mono" id="inc"></div>
     <div style="margin-top:8px"><span class="badge" id="incBadge"></span> <span class="sub">vs previous period</span></div>
     <div class="split" id="incSplit"></div>
   </div>
 
   <div class="card">
-    <div class="ch"><div class="ico red">↑</div><h3>Expenses</h3><span class="sp"></span><span class="badge" id="rateBadge"></span></div>
+    <div class="ch"><div class="ico red" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10.5v-9M2.5 5 6 1.5 9.5 5"/></svg></div><h3>Expenses</h3><span class="sp"></span><span class="badge" id="rateBadge"></span></div>
     <div class="mid mono" id="exp"></div>
     <div style="margin-top:8px"><span class="badge" id="expBadge"></span> <span class="sub">vs previous period</span></div>
     <div style="margin-top:14px;display:flex;justify-content:space-between" class="sub"><span>Net cash flow</span><span class="mono" style="color:var(--text)" id="net"></span></div>
@@ -1381,7 +1387,7 @@ body.no-ambient-motion .net-pulse{display:none!important}
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="finance.js?v=2.6.1"></script>
-<script src="app.js?v=2.6.1"></script>
+<script src="finance.js?v=2.6.2"></script>
+<script src="app.js?v=2.6.2"></script>
 </body>
 </html>
