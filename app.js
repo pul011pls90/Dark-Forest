@@ -1550,88 +1550,23 @@
     }
   }
 
-  /* ---------- footer info dialog (About, Help, Privacy, Terms, Feedback) ---------- */
+  /* ---------- footer info dialog (About, Help, Docs, Privacy, Terms, Feedback) ---------- */
   const infoDlg = $('#infoDialog');
-  const INFO_CONTENT = {
-    about: {
-      title: 'About Dark Forest Finance',
-      html: `
-        <p><b style="color:var(--text)">Dark Forest Finance (v2.6.0)</b> is a precision personal finance terminal designed for disciplined budgeting, multi-currency accounting, recurring cash-flow tracking, and long-term savings goals.</p>
-        <h4>Core Capabilities</h4>
-        <ul>
-          <li><b style="color:var(--text)">Explicit Multi-Currency Engine:</b> Each account (Checking, Savings, Visa •4021, Cash) maintains its own explicit currency denomination (<span class="mono">USD</span>, <span class="mono">EUR</span>, <span class="mono">GBP</span>, <span class="mono">JPY</span>, <span class="mono">KRW</span>, <span class="mono">CAD</span>, <span class="mono">AUD</span>, <span class="mono">KZT</span>). Dashboard KPIs and charts convert amounts using real exchange rates rather than relabeling currency symbols.</li>
-          <li><b style="color:var(--text)">Pixel-Segmented Telemetry:</b> Interactive SVG monthly cash-flow charts, pixel-matrix utilization grids, and category budget bars inspired by Stinger terminal instrumentation.</li>
-          <li><b style="color:var(--text)">Installable Offline-Ready App (PWA):</b> Works offline via Service Worker app-shell caching while keeping financial records strictly in local storage.</li>
-        </ul>
-      `
-    },
-    help: {
-      title: 'Help & Documentation',
-      html: `
-        <h4>Reporting Currency vs. Account Denomination</h4>
-        <ul>
-          <li><b style="color:var(--text)">Reporting Currency (top navigation bar):</b> Changes how dashboard totals, KPI cards, budgets, and charts are summarized using live or cached exchange rates. It <em>never</em> overwrites your stored transaction amounts.</li>
-          <li><b style="color:var(--text)">Account Denomination (Settings or Account badge):</b> Changes the underlying currency of a specific account after showing you a confirmation preview with the exact exchange rate, date, and converted balance. Original transaction amounts are preserved so repeated conversions never drift.</li>
-        </ul>
-        <h4>Keyboard & Chart Shortcuts</h4>
-        <ul>
-          <li>Use <span class="mono">←</span> / <span class="mono">→</span> arrow keys when focused on the Monthly Cash Flow chart to inspect month-by-month income, expenses, net flow, and savings rate.</li>
-          <li>Click any category row in <b style="color:var(--text)">Top Expense Categories</b> to filter the transaction ledger by that category.</li>
-        </ul>
-      `
-    },
-    privacy: {
-      title: 'Privacy & Local Storage Architecture',
-      html: `
-        <p><b style="color:var(--text)">100% Client-Side Data Ownership:</b> Dark Forest Finance stores your transactions, category budgets, savings goals, recurring schedules, and preferences exclusively in your browser’s <span class="mono">localStorage</span> (<span class="mono">darkForestFinance.v2</span>).</p>
-        <h4>What This Means for Your Privacy</h4>
-        <ul>
-          <li><b style="color:var(--text)">No Cloud Database or Tracking:</b> Your financial ledger is never transmitted to any application server, analytics tracker, or third party.</li>
-          <li><b style="color:var(--text)">Cross-Device Independence:</b> Because data lives inside each browser’s local storage, opening the public URL on another device or browser starts with a fresh local state unless you export a JSON backup and restore it on that device.</li>
-          <li><b style="color:var(--text)">Exchange Rate Lookups:</b> When online, the app fetches public USD reference exchange rates (<span class="mono">open.er-api.com</span>) with no personal or financial data attached, and caches them locally.</li>
-        </ul>
-      `
-    },
-    terms: {
-      title: 'Terms of Use & Financial Disclaimer',
-      html: `
-        <p><b style="color:var(--text)">Informational & Personal Budgeting Tool:</b> Dark Forest Finance is provided as a self-hosted / local-first personal finance utility for tracking personal income, expenses, budgets, and savings targets.</p>
-        <h4>Key Disclaimers</h4>
-        <ul>
-          <li><b style="color:var(--text)">No Financial or Tax Advice:</b> Insights, budget alerts, and savings rate calculations are mathematical summaries of user-entered data and do not constitute professional financial, investment, or tax advice.</li>
-          <li><b style="color:var(--text)">Exchange Rate Reference:</b> Foreign exchange conversions use indicative market reference rates cached in your browser and may differ from your bank’s settlement rates.</li>
-          <li><b style="color:var(--text)">Backup Responsibility:</b> Because data is stored in browser <span class="mono">localStorage</span>, clearing browser site data will remove local records. Use <b style="color:var(--text)">Backup JSON</b> or <b style="color:var(--text)">Export CSV</b> regularly to keep independent copies.</li>
-        </ul>
-      `
-    },
-    feedback: {
-      title: 'Diagnostics, Backup & Data Tools',
-      html: `
-        <p>Verify calculation integrity, export portable backups, or inspect your current local storage telemetry below.</p>
-        <h4>System Telemetry</h4>
-        <ul>
-          <li><b style="color:var(--text)">Storage Schema:</b> <span class="mono">darkForestFinance.v2 (Schema v${F.SCHEMA_VERSION})</span></li>
-          <li><b style="color:var(--text)">Active Records:</b> <span class="mono" id="infoRecordSummary">—</span></li>
-          <li><b style="color:var(--text)">FX Rate Feed:</b> <span class="mono" id="infoFxSummary">—</span></li>
-        </ul>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">
-          <button type="button" class="btn sm pri" data-trigger-backup data-close>⬇ Export JSON Backup</button>
-          <button type="button" class="btn sm dk" data-trigger-csv data-close>⬇ Export CSV Ledger</button>
-          <button type="button" class="btn sm dk" data-trigger-restore data-close>⬆ Restore Backup</button>
-          <a href="./tests.html" class="btn sm dk" style="display:inline-flex;align-items:center">✓ Run Unit Test Suite</a>
-        </div>
-      `
-    }
-  };
+  const INFO_CONTENT = F.INFO_CONTENT;
 
   function openInfoDialog(tab = 'about') {
     if (!infoDlg) return;
     const key = INFO_CONTENT[tab] ? tab : 'about';
     const info = INFO_CONTENT[key];
-    if ($('#infoDialogTitle')) $('#infoDialogTitle').textContent = info.title;
-    if ($('#infoDialogBody')) $('#infoDialogBody').innerHTML = info.html;
+    const titleEl = $('#infoTitle') || $('#infoDialogTitle');
+    const bodyEl = $('#infoContent') || $('#infoDialogBody');
+    if (titleEl) titleEl.textContent = info.title;
+    if (bodyEl) bodyEl.innerHTML = info.html;
     document.querySelectorAll('#infoTabs button').forEach(b => {
-      b.classList.toggle('on', b.dataset.infoTab === key);
+      const tabKey = b.dataset.infotab || b.dataset.infoTab;
+      const isActive = tabKey === key;
+      b.classList.toggle('on', isActive);
+      b.setAttribute('aria-selected', isActive ? 'true' : 'false');
     });
     if (key === 'feedback') {
       const recEl = $('#infoRecordSummary');
@@ -1639,7 +1574,10 @@
       const fxEl = $('#infoFxSummary');
       if (fxEl && state.fx) fxEl.textContent = `${state.fx.source} (${state.fx.date}) · ${Object.keys(state.fx.rates || {}).length} currencies`;
     }
-    if (!infoDlg.open) infoDlg.showModal();
+    if (!infoDlg.open) {
+      infoDlg.showModal();
+    }
+    if (bodyEl) bodyEl.scrollTop = 0;
   }
 
   function deleteCustomCategory(type, name) {
@@ -1943,8 +1881,8 @@
     document.addEventListener('click', e => {
       const infoBtn = e.target.closest('[data-open-info]');
       if (infoBtn) return openInfoDialog(infoBtn.dataset.openInfo);
-      const infoTabBtn = e.target.closest('[data-info-tab]');
-      if (infoTabBtn) return openInfoDialog(infoTabBtn.dataset.infoTab);
+      const infoTabBtn = e.target.closest('[data-infotab], [data-info-tab]');
+      if (infoTabBtn) return openInfoDialog(infoTabBtn.dataset.infotab || infoTabBtn.dataset.infoTab);
       const acctCurrBtn = e.target.closest('[data-acct-curr]');
       if (acctCurrBtn) return openAcctCurrencyDialog(acctCurrBtn.dataset.acctCurr);
       if (e.target.closest('[data-trigger-csv]')) return exportCSV();
@@ -2057,5 +1995,6 @@
     openAcctCurrencyDialog,
     openInfoDialog,
     refreshExchangeRates,
+    INFO_CONTENT,
   }; // debugging hook
 })();

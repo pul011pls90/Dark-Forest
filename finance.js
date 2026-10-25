@@ -1151,6 +1151,136 @@
     return out;
   }
 
+  /* ---------- Application Information, Help, Docs, Privacy, Terms & Feedback Content ---------- */
+  const INFO_CONTENT = {
+    about: {
+      title: 'About Dark Forest Finance & Budget Tracker',
+      html: `
+        <p><b style="color:var(--text)">Dark Forest Finance (v2.6.0)</b> is a precision personal budget, cash-flow tracker, and resource utility estimator built for rigorous financial discipline, multi-currency accounting, and zero-telemetry local privacy.</p>
+        <h4>Core Architecture &amp; Capabilities</h4>
+        <ul>
+          <li><b style="color:var(--text)">100% Local-First Data Storage:</b> All transactions, category budgets, savings goals, and accounts reside exclusively in your browser’s <span class="mono">localStorage</span>. No financial records are ever sent to external cloud servers or trackers.</li>
+          <li><b style="color:var(--text)">Explicit Multi-Currency Engine:</b> Each account (Checking, Savings, Visa •4021, Cash) maintains its own native currency denomination (<span class="mono">USD</span>, <span class="mono">EUR</span>, <span class="mono">GBP</span>, <span class="mono">JPY</span>, <span class="mono">KRW</span>, <span class="mono">CAD</span>, <span class="mono">AUD</span>, <span class="mono">KZT</span>). Dashboard totals convert values dynamically using cached exchange rates without relabeling or drifting native balances.</li>
+          <li><b style="color:var(--text)">Exact Minor-Unit Arithmetic:</b> Stored values use integer minor units (whole cents, sen, or won), preventing binary floating-point rounding errors.</li>
+          <li><b style="color:var(--text)">Terminal-Inspired Telemetry:</b> Pixel-matrix utilization gauges, SVG monthly cash-flow histograms, and high-contrast IBM Plex Mono typography engineered for dense financial scanning.</li>
+          <li><b style="color:var(--text)">Installable PWA &amp; Offline Ready:</b> Functions seamlessly offline with Service Worker caching and instant local responsiveness.</li>
+        </ul>
+      `
+    },
+    help: {
+      title: 'Help & User Workflow Guide',
+      html: `
+        <h4>1. Adding &amp; Editing Expenses</h4>
+        <ul>
+          <li><b style="color:var(--text)">Quick Add Bar:</b> Type an amount, click or tap a category badge (<span class="mono">Groceries</span>, <span class="mono">Dining</span>, <span class="mono">Transport</span>, etc.), and hit Enter to log immediately.</li>
+          <li><b style="color:var(--text)">New Transaction Dialog:</b> Click <b style="color:var(--text)">+ New Transaction</b> or press <span class="mono">Alt + N</span>. Select type (<span class="mono">Expense</span> or <span class="mono">Income</span>), enter the amount, select an account and category, choose the date, and add an optional note.</li>
+          <li><b style="color:var(--text)">Editing Records:</b> Click any row in the Transactions table to reopen and modify amount, category, date, or account.</li>
+        </ul>
+        <h4>2. Managing Monthly Budgets</h4>
+        <ul>
+          <li>Navigate to the <b style="color:var(--text)">Budgets</b> tab (<span class="mono">#/budgets</span>) to establish monthly spending ceilings by category.</li>
+          <li><b style="color:var(--text)">Color-Coded Status:</b> Progress bars stay emerald green when on track (&lt;80%), shift to amber warning (80%–100%), and trigger a red overspent alert (&gt;100%).</li>
+          <li>Budget progress updates dynamically whenever transactions are added, edited, or deleted.</li>
+        </ul>
+        <h4>3. Filtering &amp; Searching Records</h4>
+        <ul>
+          <li><b style="color:var(--text)">Search Box:</b> Press <span class="mono">/</span> or <span class="mono">Ctrl/Cmd + K</span> to search across descriptions, notes, categories, and account names.</li>
+          <li><b style="color:var(--text)">Type &amp; Account Filters:</b> Use the filter bar to isolate Expenses, Income, specific accounts, or click category pills to inspect one category.</li>
+          <li><b style="color:var(--text)">Date Ranges:</b> Choose <span class="mono">1M</span> (current month), <span class="mono">6M</span> (six months), <span class="mono">12M</span> (year), or <span class="mono">All</span>.</li>
+        </ul>
+        <h4>4. Calculating Totals &amp; Cash Flow</h4>
+        <ul>
+          <li><b style="color:var(--text)">Reporting Currency:</b> Switch the currency selector in the top bar (<span class="mono">USD</span>, <span class="mono">EUR</span>, <span class="mono">KRW</span>, etc.) to convert all native accounts into a single uniform reporting total without changing stored amounts.</li>
+          <li><b style="color:var(--text)">Interactive Cash Flow Chart:</b> Use <span class="mono">←</span> / <span class="mono">→</span> arrow keys on the chart to inspect month-by-month income, expense totals, net savings, and savings rate.</li>
+        </ul>
+        <h4>5. Estimating Resource &amp; Utility Costs</h4>
+        <ul>
+          <li>Metered utilities (electricity <span class="mono">kWh</span>, water/gas <span class="mono">m³</span>) can be entered as categorized expense entries under <span class="mono">Utilities</span> or scheduled in the <b style="color:var(--text)">Recurring</b> tab.</li>
+          <li>Utility bills are computed linearly: <span class="mono">Cost = Quantity × Rate</span> with exact whole-unit rounding, avoiding fractional drift.</li>
+        </ul>
+        <h4>6. Exporting &amp; Restoring Data</h4>
+        <ul>
+          <li>Click <b style="color:var(--text)">↓ Export CSV</b> in the footer or transaction header to export spreadsheet-compatible CSV records.</li>
+          <li>Click <b style="color:var(--text)">↓ Backup JSON</b> to create a portable timestamped database file.</li>
+          <li>Click <b style="color:var(--text)">↑ Restore Backup</b> to import existing JSON backups with schema validation.</li>
+        </ul>
+      `
+    },
+    docs: {
+      title: 'Technical Documentation & Specifications',
+      html: `
+        <h4>Data Storage Schema (v2.6.0)</h4>
+        <ul>
+          <li><b style="color:var(--text)">Storage Key:</b> <span class="mono">darkForestFinance.v2</span> in browser <span class="mono">localStorage</span>.</li>
+          <li><b style="color:var(--text)">Core Entities:</b>
+            <span class="mono">transactions</span> (UUID, type, amount in minor units, category, account, date, note),
+            <span class="mono">budgets</span> (category, monthly limit),
+            <span class="mono">goals</span> (name, target, current saved, deadline, tag),
+            <span class="mono">recurring</span> (frequency, amount, schedule),
+            <span class="mono">settings</span> (reporting currency, account denominations, theme).
+          </li>
+          <li><b style="color:var(--text)">Automatic Migration:</b> Legacy v1 bare transaction arrays automatically upgrade to v2 schema with backup preservation on startup.</li>
+        </ul>
+        <h4>Multi-Currency Engine &amp; Exchange Rates</h4>
+        <ul>
+          <li><b style="color:var(--text)">Base Currency:</b> USD reference base with matrix rate resolution: <span class="mono">Rate(A → B) = Rate(USD → B) / Rate(USD → A)</span>.</li>
+          <li><b style="color:var(--text)">Rate Cache:</b> Rates fetched from <span class="mono">open.er-api.com</span> are cached locally for 24 hours. Offline runs fall back to the most recent cached snapshot or hardcoded offline anchors.</li>
+          <li><b style="color:var(--text)">No Drift on Re-denomination:</b> Changing an account’s currency uses fixed-ratio conversions that preserve original value integrity.</li>
+        </ul>
+        <h4>Keyboard Shortcuts</h4>
+        <ul>
+          <li><span class="mono">Alt + N</span> or <span class="mono">N</span>: Open Add Transaction modal</li>
+          <li><span class="mono">/</span> or <span class="mono">Ctrl + K</span>: Focus transaction search</li>
+          <li><span class="mono">Esc</span>: Close any open modal dialog</li>
+          <li><span class="mono">←</span> / <span class="mono">→</span>: Navigate Monthly Cash Flow histogram bars</li>
+        </ul>
+      `
+    },
+    privacy: {
+      title: 'Privacy & Local Storage Architecture',
+      html: `
+        <p><b style="color:var(--text)">100% Client-Side Data Ownership:</b> Dark Forest Finance stores your transactions, category budgets, savings goals, recurring schedules, and preferences exclusively in your browser’s <span class="mono">localStorage</span> (<span class="mono">darkForestFinance.v2</span>).</p>
+        <h4>What This Means for Your Privacy</h4>
+        <ul>
+          <li><b style="color:var(--text)">No Cloud Database or Tracking:</b> Your financial ledger is never transmitted to any application server, analytics tracker, or third party.</li>
+          <li><b style="color:var(--text)">Cross-Device Independence:</b> Because data lives inside each browser’s local storage, opening the public URL on another device or browser starts with a fresh local state unless you export a JSON backup and restore it on that device.</li>
+          <li><b style="color:var(--text)">Exchange Rate Lookups:</b> When online, the app fetches public USD reference exchange rates (<span class="mono">open.er-api.com</span>) with no personal or financial data attached, and caches them locally.</li>
+        </ul>
+      `
+    },
+    terms: {
+      title: 'Terms of Use & Local Software Disclaimer',
+      html: `
+        <p><b style="color:var(--text)">Local Personal Budgeting Utility:</b> Dark Forest Finance is provided as a client-side personal finance and resource management tool for personal and household accounting.</p>
+        <h4>Terms of Use &amp; Disclaimers</h4>
+        <ul>
+          <li><b style="color:var(--text)">No Financial, Investment, or Tax Advice:</b> Calculations, budget progress meters, savings rates, and cash-flow projections are mathematical summaries of user-entered data. They are for informational purposes only and do not constitute professional financial, tax, or investment advice.</li>
+          <li><b style="color:var(--text)">Data Ownership &amp; Backup Responsibility:</b> Because data is stored strictly in your browser’s local storage, clearing browsing history, site data, or using incognito/private windows will erase unexported records. You are solely responsible for creating regular copies via <b style="color:var(--text)">Backup JSON</b> or <b style="color:var(--text)">Export CSV</b>.</li>
+          <li><b style="color:var(--text)">Exchange Rate Reference:</b> Foreign exchange rates are sourced from public market feeds and are provided as indicative approximations. They may differ from commercial bank exchange rates or transaction processing fees.</li>
+          <li><b style="color:var(--text)">Provided As-Is:</b> The software is provided "as is" without warranty of any kind, express or implied. The developers assume no liability for errors in user input or data loss resulting from cleared browser storage.</li>
+        </ul>
+      `
+    },
+    feedback: {
+      title: 'Diagnostics, Backup & Data Tools',
+      html: `
+        <p>Verify calculation integrity, export portable backups, or inspect your current local storage telemetry below.</p>
+        <h4>System Telemetry</h4>
+        <ul>
+          <li><b style="color:var(--text)">Storage Schema:</b> <span class="mono">darkForestFinance.v2 (Schema v${SCHEMA_VERSION})</span></li>
+          <li><b style="color:var(--text)">Active Records:</b> <span class="mono" id="infoRecordSummary">—</span></li>
+          <li><b style="color:var(--text)">FX Rate Feed:</b> <span class="mono" id="infoFxSummary">—</span></li>
+        </ul>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">
+          <button type="button" class="btn sm pri" data-trigger-backup data-close>⬇ Export JSON Backup</button>
+          <button type="button" class="btn sm dk" data-trigger-csv data-close>⬇ Export CSV Ledger</button>
+          <button type="button" class="btn sm dk" data-trigger-restore data-close>⬆ Restore Backup</button>
+          <a href="./tests.html" class="btn sm dk" style="display:inline-flex;align-items:center">✓ Run Unit Test Suite</a>
+        </div>
+      `
+    }
+  };
+
   return {
     STORAGE_KEY, SCHEMA_VERSION, CATEGORIES, ACCOUNTS, GOAL_TAGS, FREQUENCIES, CURRENCIES, DATE_FORMATS,
     FX_STORAGE_KEY, FX_STALE_MS, DEFAULT_FX_RATES,
@@ -1166,5 +1296,6 @@
     signed, summarize, netBalance, balanceByAccount, byCategory, monthlySeries, balanceHistory, savingStreak, budgetStatus, monthlyBudgetStatus, goalProgress,
     filterTransactions, sortTransactions, seed, validateGoalAction, suggestedContribution,
     sanitizeCSVCell, toCSV, createBackup, validateBackup, restoreBackup,
+    INFO_CONTENT,
   };
 });

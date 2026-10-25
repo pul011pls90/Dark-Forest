@@ -645,6 +645,61 @@ test('exchange rate service: live fetch, failure fallback, stale detection, and 
   eq(badPrev.ok, false);
 });
 
+/* footer information & documentation content */
+test('footer info dialog content: contains all required tabs with valid metadata', () => {
+  eq(typeof F.INFO_CONTENT, 'object');
+  const requiredKeys = ['about', 'help', 'docs', 'privacy', 'terms', 'feedback'];
+  for (const k of requiredKeys) {
+    if (!F.INFO_CONTENT[k]) throw new Error(`Missing required footer info tab '${k}'`);
+    eq(typeof F.INFO_CONTENT[k].title, 'string');
+    eq(typeof F.INFO_CONTENT[k].html, 'string');
+    if (F.INFO_CONTENT[k].title.length < 5) throw new Error(`Title too short for tab '${k}'`);
+    if (F.INFO_CONTENT[k].html.length < 50) throw new Error(`HTML content too short for tab '${k}'`);
+  }
+});
+
+test('footer help documentation: covers required user workflows', () => {
+  const helpHtml = F.INFO_CONTENT.help.html.toLowerCase();
+  const requiredTopics = [
+    ['add expenses', ['adding', 'expense']],
+    ['manage budgets', ['managing', 'budget']],
+    ['filter records', ['filtering', 'search']],
+    ['calculate totals', ['totals', 'cash flow']],
+    ['estimate resource costs', ['utility', 'rate', 'cost']],
+    ['export data', ['export', 'backup']],
+  ];
+  for (const [label, keywords] of requiredTopics) {
+    const found = keywords.every(kw => helpHtml.includes(kw));
+    if (!found) throw new Error(`Help section does not cover required topic: ${label}`);
+  }
+});
+
+test('footer technical docs: covers data schema, multi-currency, and keyboard shortcuts', () => {
+  const docsHtml = F.INFO_CONTENT.docs.html.toLowerCase();
+  if (!docsHtml.includes('darkforestfinance.v2') && !docsHtml.includes('storage key')) {
+    throw new Error('Docs missing storage key / schema information');
+  }
+  if (!docsHtml.includes('multi-currency') && !docsHtml.includes('exchange rate')) {
+    throw new Error('Docs missing multi-currency engine specifications');
+  }
+  if (!docsHtml.includes('shortcuts') && !docsHtml.includes('alt + n')) {
+    throw new Error('Docs missing keyboard shortcuts');
+  }
+});
+
+test('footer terms of use: includes personal budgeting terms, disclaimer, and backup responsibility', () => {
+  const termsHtml = F.INFO_CONTENT.terms.html.toLowerCase();
+  if (!termsHtml.includes('no financial') || !termsHtml.includes('advice')) {
+    throw new Error('Terms missing no-financial-advice disclaimer');
+  }
+  if (!termsHtml.includes('backup') && !termsHtml.includes('local storage')) {
+    throw new Error('Terms missing user backup responsibility');
+  }
+  if (!termsHtml.includes('as is') && !termsHtml.includes('as-is')) {
+    throw new Error('Terms missing as-is software warranty limitation');
+  }
+});
+
 function publishResults() {
   const fails = results.filter(r => !r[0]);
   document.getElementById('sum').textContent = `${results.length - fails.length}/${results.length} passed`;
