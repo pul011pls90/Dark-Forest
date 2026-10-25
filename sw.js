@@ -1,7 +1,7 @@
 /* Dark Forest Finance — App-Shell Service Worker.
    Caches only static application shell assets. Financial records live in localStorage
    and are never cached in Service Worker CacheStorage. */
-const CACHE_VERSION = 'dark-forest-shell-v12';
+const CACHE_VERSION = 'dark-forest-shell-v13';
 const APP_SHELL = [
   './',
   './index.html',
@@ -43,8 +43,8 @@ self.addEventListener('fetch', event => {
   const isFonts = url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com';
   if (!isSameOrigin && !isFonts) return;
 
-  // Never cache test runner or dynamic query endpoints
-  if (isSameOrigin && url.pathname.endsWith('/tests.html')) return;
+  // Never cache test runner or query-busted scripts
+  if (isSameOrigin && (url.pathname.endsWith('/tests.html') || url.search.includes('v='))) return;
 
   if (req.mode === 'navigate') {
     event.respondWith(
