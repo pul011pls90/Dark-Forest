@@ -1778,11 +1778,6 @@
       if (!file) { resetRestoreDialog(); return; }
       processSelectedBackupFile(file);
     });
-        $('#rError').hidden = false;
-        toast('Could not read backup file');
-      };
-      reader.readAsText(file);
-    });
     rform.addEventListener('submit', e => {
       e.preventDefault();
       if (rdlg.open === false || !pendingRestoreRaw) return;
