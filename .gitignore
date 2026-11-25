@@ -4,3 +4,6 @@
 .env.*
 node_modules/
 *.log
+Icon
+Icon*
+__pycache__/

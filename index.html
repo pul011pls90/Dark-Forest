@@ -17,6 +17,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Geist+Pixel&text=LEVSAR0123456789%20HPXGMU&display=swap" rel="stylesheet">
 <style>
 :root{
+  color-scheme:dark;
+  accent-color:#00DF81;
+
   /* Core palette */
   --bg-primary:#00110F;                   /* near-black with a subtle green undertone */
   --bg:var(--bg-primary);                 /* page background */
@@ -374,9 +377,152 @@ dialog::backdrop{background:var(--scrim);backdrop-filter:blur(3px)}
 .field{display:grid;gap:6px}
 .field label,.field legend{font-size:11.5px;color:var(--muted);font-weight:var(--fw-medium)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.inp{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 12px;color:var(--text);font:inherit;font-size:13px;width:100%;color-scheme:dark;transition:border-color var(--dur-fast)}
+.inp{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 12px;color:var(--text);font:inherit;font-size:13px;width:100%;color-scheme:dark;accent-color:var(--accent);transition:border-color var(--dur-fast)}
 .inp:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
 .inp[aria-invalid=true]{border-color:var(--danger)}
+
+/* Custom Bespoke File Drop & Restore Controls */
+.sr-file-input{
+  position:absolute;
+  width:1px;
+  height:1px;
+  padding:0;
+  margin:-1px;
+  overflow:hidden;
+  clip:rect(0,0,0,0);
+  border:0;
+}
+.file-drop-zone{
+  position:relative;
+  border:1px dashed var(--line-emerald);
+  border-radius:var(--r-sm);
+  background:var(--bg-subtle);
+  transition:all var(--dur-fast);
+  cursor:pointer;
+}
+.file-drop-zone:hover, .file-drop-zone.dragover{
+  border-color:var(--accent);
+  background:rgba(0,101,79,.16);
+  box-shadow:0 0 12px rgba(0,223,129,.15);
+}
+.file-drop-zone.has-file{
+  border-style:solid;
+  border-color:var(--line-accent);
+  background:rgba(0,101,79,.12);
+}
+.file-drop-label{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 14px;
+  cursor:pointer;
+  user-select:none;
+}
+.file-drop-icon{
+  width:36px;
+  height:36px;
+  border-radius:var(--r-sm);
+  background:var(--surface-emerald);
+  border:1px solid var(--line-emerald);
+  color:var(--accent);
+  display:grid;
+  place-items:center;
+  flex-shrink:0;
+  transition:all var(--dur-fast);
+}
+.file-drop-zone:hover .file-drop-icon{
+  border-color:var(--accent);
+  box-shadow:0 0 8px var(--accent-glow);
+  transform:translateY(-1px);
+}
+.file-drop-info{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  flex:1;
+  min-width:0;
+}
+.file-drop-title{
+  font-family:var(--font-mono);
+  font-size:13px;
+  font-weight:var(--fw-semibold);
+  color:var(--text-primary);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.file-drop-sub{
+  font-size:11px;
+  color:var(--muted);
+}
+.file-drop-btn{
+  font-family:var(--font-mono);
+  font-size:11.5px;
+  font-weight:var(--fw-semibold);
+  letter-spacing:.03em;
+  padding:6px 14px;
+  border-radius:var(--r-btn);
+  background:var(--surface-emerald);
+  color:var(--text-primary);
+  border:1px solid var(--line-emerald);
+  cursor:pointer;
+  flex-shrink:0;
+  transition:all var(--dur-fast);
+  box-shadow:0 1px 3px rgba(0,0,0,.4);
+}
+.file-drop-zone:hover .file-drop-btn{
+  background:var(--accent);
+  color:var(--on-accent);
+  border-color:var(--accent-hover);
+  box-shadow:0 0 8px var(--accent-glow);
+}
+.sr-file-input:focus-visible + .file-drop-label{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+  border-radius:var(--r-sm);
+}
+input[type="file"]::file-selector-button{
+  font-family:var(--font-mono);
+  font-size:11.5px;
+  font-weight:var(--fw-semibold);
+  padding:5px 14px;
+  margin-right:12px;
+  border-radius:var(--r-btn);
+  background:var(--surface-emerald);
+  color:var(--text-primary);
+  border:1px solid var(--line-emerald);
+  cursor:pointer;
+}
+
+/* Custom Native Datepicker & Search Controls */
+input[type="date"]{
+  color-scheme:dark;
+  accent-color:var(--accent);
+}
+input[type="date"]::-webkit-calendar-picker-indicator{
+  cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2300DF81' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:16px 16px;
+  opacity:.92;
+  transition:opacity var(--dur-fast),transform var(--dur-fast),filter var(--dur-fast);
+}
+input[type="date"]:hover::-webkit-calendar-picker-indicator{
+  opacity:1;
+  transform:scale(1.08);
+  filter:drop-shadow(0 0 4px var(--accent-glow));
+}
+
+/* Custom Scrollbars */
+*::-webkit-scrollbar{width:6px;height:6px}
+*::-webkit-scrollbar-track{background:var(--bg)}
+*::-webkit-scrollbar-thumb{background:var(--line-emerald);border-radius:var(--r-pill)}
+*::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+html{scrollbar-color:var(--line-emerald) var(--bg);scrollbar-width:thin}
+
+/* Custom Selection Highlight */
+::selection{background:var(--surface-emerald);color:var(--accent)}
 .money{position:relative}
 .money span{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-family:var(--font-mono);font-size:12.5px;pointer-events:none}
 .money .inp{padding-left:34px;font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:18px;font-weight:var(--fw-bold)}
@@ -1159,8 +1305,20 @@ body.no-ambient-motion .net-pulse{display:none!important}
     <div class="db">
       <p class="sub" style="line-height:1.45">Select a Dark Forest Finance JSON backup file to validate and preview before restoring. Existing data will remain untouched unless you confirm.</p>
       <div class="field">
-        <label for="restoreFile">Backup file (.json)</label>
-        <input class="inp" type="file" id="restoreFile" accept=".json,application/json" aria-describedby="rError">
+        <label id="restoreFileLabel">Backup file (.json)</label>
+        <div class="file-drop-zone" id="restoreDropZone">
+          <input class="sr-file-input" type="file" id="restoreFile" accept=".json,application/json" aria-describedby="rError" aria-labelledby="restoreFileLabel">
+          <label for="restoreFile" class="file-drop-label" id="restoreDropLabel">
+            <div class="file-drop-icon" aria-hidden="true">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+            </div>
+            <div class="file-drop-info">
+              <span class="file-drop-title" id="restoreFilePrompt">Choose JSON Backup</span>
+              <span class="file-drop-sub" id="restoreFileSub">or drag and drop file here</span>
+            </div>
+            <span class="file-drop-btn">Browse</span>
+          </label>
+        </div>
       </div>
       <div id="rError" class="restore-err" role="alert" hidden></div>
       <div id="rPreview" class="restore-preview" hidden>
@@ -1387,7 +1545,7 @@ body.no-ambient-motion .net-pulse{display:none!important}
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="finance.js?v=2.6.2"></script>
-<script src="app.js?v=2.6.2"></script>
+<script src="finance.js?v=2.7.0"></script>
+<script src="app.js?v=2.7.0"></script>
 </body>
 </html>

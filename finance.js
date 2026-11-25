@@ -959,6 +959,48 @@
     return lines.join('\r\n');
   }
 
+  function toMonthlySummaryCSV(txs = [], today = todayISO(), months = 12, opts = {}) {
+    const headers = ['Month', 'Income', 'Expense', 'Net Cash Flow', 'Savings Rate (%)', 'End-of-Month Net Balance'];
+    const lines = [headers.join(',')];
+    const series = monthlySeries(txs, today, months, opts);
+    for (const m of series) {
+      const eomBalance = netBalance(txs, monthEnd(m.month + '-01'), opts);
+      const row = [
+        sanitizeCSVCell(m.month, { protectFormula: false }),
+        sanitizeCSVCell((m.income / 100).toFixed(2), { protectFormula: false }),
+        sanitizeCSVCell((m.expense / 100).toFixed(2), { protectFormula: false }),
+        sanitizeCSVCell((m.net / 100).toFixed(2), { protectFormula: false }),
+        sanitizeCSVCell(m.savingsRate === null ? 'N/A' : m.savingsRate.toFixed(1), { protectFormula: false }),
+        sanitizeCSVCell((eomBalance / 100).toFixed(2), { protectFormula: false }),
+      ];
+      lines.push(row.join(','));
+    }
+    return lines.join('\r\n');
+  }
+
+  function toCategorySummaryCSV(txs = [], range = periodRange(1, todayISO()), settings = defaultSettings(), opts = {}) {
+    const headers = ['Category', 'Type', 'Spent or Received', 'Budget Limit', 'Remainder', 'Overspent'];
+    const lines = [headers.join(',')];
+    const expenseCats = byCategory(txs, range, 'expense', opts);
+    const budgets = settings && settings.budgets ? settings.budgets : [];
+    const bMap = Object.fromEntries(budgets.map(b => [b.category, b.limit]));
+    for (const c of expenseCats) {
+      const bLimit = bMap[c.category];
+      const remainder = bLimit !== undefined ? (bLimit - c.amount) : null;
+      const overspent = remainder !== null && remainder < 0;
+      const row = [
+        sanitizeCSVCell(c.category),
+        'expense',
+        sanitizeCSVCell((c.amount / 100).toFixed(2), { protectFormula: false }),
+        sanitizeCSVCell(bLimit !== undefined ? (bLimit / 100).toFixed(2) : 'N/A', { protectFormula: false }),
+        sanitizeCSVCell(remainder !== null ? (remainder / 100).toFixed(2) : 'N/A', { protectFormula: false }),
+        overspent ? 'YES' : 'NO',
+      ];
+      lines.push(row.join(','));
+    }
+    return lines.join('\r\n');
+  }
+
   function createBackup({ transactions = [], budgets = [], goals = [], contributions = [], recurring = [], settings = defaultSettings() } = {}, exportedAt = new Date().toISOString()) {
     const normSettings = normalizeSettings(settings);
     const t = cleanList(transactions, x => normalize(x, normSettings));
@@ -1295,7 +1337,7 @@
     parseAmount, createId, migrate, load, save,
     signed, summarize, netBalance, balanceByAccount, byCategory, monthlySeries, balanceHistory, savingStreak, budgetStatus, monthlyBudgetStatus, goalProgress,
     filterTransactions, sortTransactions, seed, validateGoalAction, suggestedContribution,
-    sanitizeCSVCell, toCSV, createBackup, validateBackup, restoreBackup,
+    sanitizeCSVCell, toCSV, toMonthlySummaryCSV, toCategorySummaryCSV, createBackup, validateBackup, restoreBackup,
     INFO_CONTENT,
   };
 });

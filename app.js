@@ -1652,6 +1652,10 @@
   function resetRestoreDialog() {
     pendingRestoreRaw = null;
     if ($('#restoreFile')) $('#restoreFile').value = '';
+    const prompt = $('#restoreFilePrompt'), sub = $('#restoreFileSub'), zone = $('#restoreDropZone');
+    if (prompt) prompt.textContent = 'Choose JSON Backup';
+    if (sub) sub.textContent = 'or drag and drop file here';
+    if (zone) { zone.classList.remove('has-file'); zone.classList.remove('dragover'); }
     if ($('#rError')) { $('#rError').textContent = ''; $('#rError').hidden = true; }
     if ($('#rPreview')) $('#rPreview').hidden = true;
     if ($('#rWarnings')) { $('#rWarnings').textContent = ''; $('#rWarnings').hidden = true; }
@@ -1711,9 +1715,44 @@
 
   if (rdlg) {
     rdlg.addEventListener('close', () => { pendingRestoreRaw = null; });
-    $('#restoreFile').addEventListener('change', e => {
-      const file = e.target.files && e.target.files[0];
-      if (!file) { resetRestoreDialog(); return; }
+    const dropZone = $('#restoreDropZone');
+    if (dropZone) {
+      ['dragenter', 'dragover'].forEach(name => {
+        dropZone.addEventListener(name, e => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.add('dragover');
+        });
+      });
+      ['dragleave', 'drop'].forEach(name => {
+        dropZone.addEventListener(name, e => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.remove('dragover');
+        });
+      });
+      dropZone.addEventListener('drop', e => {
+        const dt = e.dataTransfer;
+        const file = dt && dt.files && dt.files[0];
+        if (!file) return;
+        const inp = $('#restoreFile');
+        if (inp) {
+          try {
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            inp.files = dataTransfer.files;
+          } catch (_) {}
+        }
+        processSelectedBackupFile(file);
+      });
+    }
+
+    function processSelectedBackupFile(file) {
+      const prompt = $('#restoreFilePrompt'), sub = $('#restoreFileSub'), zone = $('#restoreDropZone');
+      if (prompt) prompt.textContent = file.name;
+      if (sub) sub.textContent = `${(file.size / 1024).toFixed(1)} KB · Ready to validate`;
+      if (zone) zone.classList.add('has-file');
+
       if (file.size > 10 * 1024 * 1024) {
         $('#rPreview').hidden = true;
         $('#rConfirm').disabled = true;
@@ -1728,6 +1767,17 @@
         $('#rPreview').hidden = true;
         $('#rConfirm').disabled = true;
         $('#rError').textContent = 'Could not read the selected file.';
+        $('#rError').hidden = false;
+        toast('Could not read backup file');
+      };
+      reader.readAsText(file);
+    }
+
+    $('#restoreFile').addEventListener('change', e => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) { resetRestoreDialog(); return; }
+      processSelectedBackupFile(file);
+    });
         $('#rError').hidden = false;
         toast('Could not read backup file');
       };

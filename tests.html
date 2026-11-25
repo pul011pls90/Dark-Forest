@@ -720,6 +720,22 @@ test('category & budget label hover safety: bare .nm:hover scale does not distor
   }
 });
 
+test('toMonthlySummaryCSV exports valid CSV with header and net balance', () => {
+  const t = [tx('income', 500000, '2026-10-01'), tx('expense', 100000, '2026-10-05')];
+  const csv = F.toMonthlySummaryCSV(t, TODAY, 1);
+  if (!csv.includes('Month,Income,Expense,Net Cash Flow') || !csv.includes('2026-10')) {
+    throw new Error('CSV missing required headers or month row: ' + csv);
+  }
+});
+
+test('toCategorySummaryCSV exports category spending vs budget breakdown', () => {
+  const t = [tx('expense', 2500, '2026-10-05', { category: 'Groceries' })];
+  const csv = F.toCategorySummaryCSV(t, F.periodRange(1, TODAY));
+  if (!csv.includes('Category,Type,Spent or Received') || !csv.includes('Groceries')) {
+    throw new Error('CSV missing category breakdown: ' + csv);
+  }
+});
+
 function publishResults() {
   const fails = results.filter(r => !r[0]);
   document.getElementById('sum').textContent = `${results.length - fails.length}/${results.length} passed`;
